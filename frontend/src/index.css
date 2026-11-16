@@ -1,0 +1,98 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* Global Settings */
+
+:root {
+  font-family: 'Inter', sans-serif;
+  color: #142D4E;
+  background: #FFFFFF;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+  background: #FFFFFF;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+/* CampusFind Brand Colors */
+
+.brand-campus {
+  color: #142D4E;
+}
+
+.brand-find {
+  color: #16A6A0;
+}
+
+/* Navbar Styling */
+
+.navbar {
+  background-color: #FFFFFF !important;
+}
+
+.navbar .nav-link {
+  color: #142D4E;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.navbar .nav-link:hover {
+  color: #16A6A0;
+}
+
+/* Primary Button */
+
+.btn-primary {
+  background-color: #16A6A0;
+  border-color: #16A6A0;
+  color: #FFFFFF;
+}
+
+.btn-primary:hover {
+  background-color: #10877F;
+  border-color: #10877F;
+}
+
+/* Outline Button */
+
+.btn-outline-primary {
+  color: #142D4E;
+  border-color: #142D4E;
+}
+
+.btn-outline-primary:hover {
+  background-color: #142D4E;
+  color: #FFFFFF;
+}
+
+/* Remove Default List Bullets */
+
+ul,
+ol {
+  list-style: none;
+}

@@ -1,0 +1,243 @@
+
+/* =================================
+   REGISTRATION AND LOGIN PAGES
+================================= */
+
+.auth-section {
+  min-height: calc(100vh - 70px);
+  padding: 12px 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background-image:
+    linear-gradient(
+      rgba(20, 45, 78, 0.35),
+      rgba(20, 45, 78, 0.35)
+    ),
+    url('/campus-bg.jpg');
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* =================================
+   AUTH CARD
+================================= */
+
+.auth-card {
+  width: 100%;
+  max-width: 540px;
+  margin: auto;
+  padding: 18px 28px;
+  background: #ffffff;
+  border: 1px solid #e5edf5;
+  border-radius: 16px;
+  box-shadow: 0 8px 25px rgba(20, 45, 78, 0.07);
+}
+
+/* =================================
+   HEADING
+================================= */
+
+.auth-heading {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.auth-heading h2 {
+  color: #142d4e;
+  font-size: 24px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.auth-heading p {
+  color: #64748b;
+  font-size: 13px;
+  margin-bottom: 0;
+}
+
+/* =================================
+   FORM SPACING
+================================= */
+
+.auth-card .mb-3,
+.auth-card .mb-4 {
+  margin-bottom: 8px !important;
+}
+
+.auth-card .form-label {
+  color: #142d4e;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+/* =================================
+   INPUT FIELDS
+================================= */
+
+.auth-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid #dce5ee;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.auth-input:focus-within {
+  border-color: #16a6a0;
+  box-shadow: 0 0 0 3px rgba(22, 166, 160, 0.10);
+}
+
+.auth-input svg {
+  flex-shrink: 0;
+  color: #64748b;
+}
+
+.auth-input input {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #142d4e;
+  font-size: 13px;
+}
+
+.auth-input input::placeholder {
+  color: #94a3b8;
+}
+
+/* =================================
+   DEPARTMENT DROPDOWN
+================================= */
+
+.auth-card .form-select {
+  min-height: 38px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border-color: #dce5ee;
+  font-size: 13px;
+  color: #142d4e;
+}
+
+.auth-card .form-select:focus {
+  border-color: #16a6a0;
+  box-shadow: 0 0 0 3px rgba(22, 166, 160, 0.10);
+}
+
+/* =================================
+   PASSWORD VISIBILITY BUTTON
+================================= */
+
+.password-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* =================================
+   SUBMIT BUTTON
+================================= */
+
+.auth-submit {
+  width: 100%;
+  padding: 9px;
+  background: #16a6a0;
+  color: #ffffff;
+  font-weight: 700;
+  border: none;
+  border-radius: 8px;
+  transition: background 0.3s ease;
+}
+
+
+.auth-submit:hover {
+  background: #10877f;
+  color: #ffffff;
+}
+
+/* =================================
+   LOGIN / REGISTER LINK
+================================= */
+
+.auth-switch {
+  text-align: center;
+  margin-top: 9px;
+  margin-bottom: 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.auth-switch a,
+.forgot-password a {
+  color: #16a6a0;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.auth-switch a:hover,
+.forgot-password a:hover {
+  text-decoration: underline;
+}
+
+/* =================================
+   LOGIN PAGE
+================================= */
+
+.login-card {
+  max-width: 500px;
+  padding: 30px 32px;
+}
+
+.login-card .auth-heading {
+  margin-bottom: 25px;
+}
+
+.login-card .mb-3,
+.login-card .mb-4 {
+  margin-bottom: 16px !important;
+}
+
+.forgot-password {
+  text-align: right;
+  margin-bottom: 22px;
+}
+
+.forgot-password a {
+  font-size: 14px;
+}
+
+/* =================================
+   MOBILE RESPONSIVE
+================================= */
+
+@media (max-width: 576px) {
+  .auth-section {
+    min-height: calc(100vh - 65px);
+    padding: 20px 12px;
+    align-items: flex-start;
+  }
+
+  .auth-card {
+    padding: 18px 15px;
+  }
+
+  .auth-heading h2 {
+    font-size: 23px;
+  }
+
+  .login-card {
+    padding: 24px 18px;
+  }
+}
