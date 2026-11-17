@@ -1,14 +1,15 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-
 import '../styles/Auth.css';
 
 function Login() {
+  const navigate = useNavigate();
+
   const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -16,19 +17,51 @@ function Login() {
     password: ''
   });
 
+  const [error, setError] = useState('');
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+
+    setError('');
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    alert('Login form submitted! Backend integration is pending.');
+    const existingUsers = JSON.parse(
+      localStorage.getItem('campusUsers') || '[]'
+    );
 
-    console.log(formData);
+    const user = existingUsers.find(
+      (item) =>
+        item.email.toLowerCase() === formData.email.trim().toLowerCase() &&
+        item.password === formData.password
+    );
+
+    if (!user) {
+      setError('Invalid email or password. Please try again.');
+      return;
+    }
+
+    // Save currently logged-in student
+    const loggedInUser = {
+      fullName: user.fullName,
+      email: user.email,
+      studentId: user.studentId,
+      department: user.department
+    };
+
+    localStorage.setItem(
+      'loggedInUser',
+      JSON.stringify(loggedInUser)
+    );
+
+    alert(`Welcome ${user.fullName}! Login successful.`);
+
+    navigate('/dashboard');
   };
 
   return (
@@ -39,7 +72,6 @@ function Login() {
         <div className="container">
           <div className="auth-card login-card">
 
-            {/* Heading */}
             <div className="auth-heading">
               <h2>Welcome Back!</h2>
               <p>
@@ -48,10 +80,8 @@ function Login() {
               </p>
             </div>
 
-            {/* Login Form */}
             <form onSubmit={handleSubmit}>
 
-              {/* Email */}
               <div className="mb-4">
                 <label className="form-label">
                   College Email
@@ -71,7 +101,6 @@ function Login() {
                 </div>
               </div>
 
-              {/* Password */}
               <div className="mb-3">
                 <label className="form-label">
                   Password
@@ -95,22 +124,23 @@ function Login() {
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label="Toggle password visibility"
                   >
-                    {showPassword
-                      ? <EyeOff size={19} />
-                      : <Eye size={19} />
-                    }
+                    {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
                   </button>
                 </div>
               </div>
 
-              {/* Forgot Password */}
+              {error && (
+                <p className="text-danger">
+                  {error}
+                </p>
+              )}
+
               <div className="forgot-password">
                 <Link to="/forgot-password">
                   Forgot Password?
                 </Link>
               </div>
 
-              {/* Login Button */}
               <button
                 type="submit"
                 className="btn auth-submit w-100"
@@ -120,12 +150,9 @@ function Login() {
 
             </form>
 
-            {/* Register Link */}
             <p className="auth-switch">
               Don't have an account?{' '}
-              <Link to="/register">
-                Create Account
-              </Link>
+              <Link to="/register">Create Account</Link>
             </p>
 
           </div>

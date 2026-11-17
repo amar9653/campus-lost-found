@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   UserRound,
   Mail,
@@ -15,6 +15,8 @@ import Footer from '../components/Footer';
 import '../styles/Auth.css';
 
 function Register() {
+  const navigate = useNavigate();
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -42,11 +44,37 @@ function Register() {
       return;
     }
 
-    alert(
-      'Registration form submitted successfully! Backend integration is pending.'
+    const existingUsers = JSON.parse(
+      localStorage.getItem('campusUsers') || '[]'
     );
 
-    console.log(formData);
+    const emailExists = existingUsers.some(
+      (user) => user.email.toLowerCase() === formData.email.trim().toLowerCase()
+    );
+
+    if (emailExists) {
+      alert('This email is already registered. Please login.');
+      return;
+    }
+
+    const newUser = {
+      fullName: formData.fullName.trim(),
+      email: formData.email.trim().toLowerCase(),
+      studentId: formData.studentId.trim(),
+      department: formData.department,
+      password: formData.password
+    };
+
+    existingUsers.push(newUser);
+
+    localStorage.setItem(
+      'campusUsers',
+      JSON.stringify(existingUsers)
+    );
+
+    alert('Registration successful! Please login.');
+
+    navigate('/login');
   };
 
   return (
@@ -66,7 +94,6 @@ function Register() {
 
             <form onSubmit={handleSubmit}>
 
-              {/* Full Name */}
               <div className="mb-3">
                 <label className="form-label">Full Name</label>
                 <div className="auth-input">
@@ -82,7 +109,6 @@ function Register() {
                 </div>
               </div>
 
-              {/* College Email */}
               <div className="mb-3">
                 <label className="form-label">College Email</label>
                 <div className="auth-input">
@@ -98,7 +124,6 @@ function Register() {
                 </div>
               </div>
 
-              {/* Student ID */}
               <div className="mb-3">
                 <label className="form-label">Student ID</label>
                 <div className="auth-input">
@@ -114,7 +139,6 @@ function Register() {
                 </div>
               </div>
 
-              {/* Department */}
               <div className="mb-3">
                 <label className="form-label">Department</label>
                 <select
@@ -135,7 +159,6 @@ function Register() {
                 </select>
               </div>
 
-              {/* Password */}
               <div className="mb-3">
                 <label className="form-label">Password</label>
                 <div className="auth-input">
@@ -160,7 +183,6 @@ function Register() {
                 </div>
               </div>
 
-              {/* Confirm Password */}
               <div className="mb-4">
                 <label className="form-label">Confirm Password</label>
                 <div className="auth-input">
@@ -176,16 +198,10 @@ function Register() {
                   <button
                     type="button"
                     className="password-toggle"
-                    onClick={() =>
-                      setShowConfirmPassword(!showConfirmPassword)
-                    }
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     aria-label="Toggle confirm password visibility"
                   >
-                    {showConfirmPassword ? (
-                      <EyeOff size={19} />
-                    ) : (
-                      <Eye size={19} />
-                    )}
+                    {showConfirmPassword ? <EyeOff size={19} /> : <Eye size={19} />}
                   </button>
                 </div>
               </div>
