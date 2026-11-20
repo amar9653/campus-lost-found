@@ -1,6 +1,5 @@
 
 import { useRef, useState } from 'react';
-
 import {
   Search,
   Package,
@@ -103,7 +102,7 @@ function FoundItemReport() {
     }
   };
 
-  // Submit form
+  // Submit Found Item Report
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -115,13 +114,67 @@ function FoundItemReport() {
       return;
     }
 
-    console.log('Found Item Report:', formData);
-    console.log('Uploaded Image:', image);
+    const loggedInUser = JSON.parse(
+      localStorage.getItem('loggedInUser') || 'null'
+    );
 
-    setMessage('Found item report submitted successfully!');
+    if (!loggedInUser?.email) {
+      setError('Please log in before submitting a report.');
+      return;
+    }
 
-    // Demo only. Connect your backend API here
-    // to save the report permanently.
+    try {
+      // Create new found report
+      const newReport = {
+        id: Date.now(),
+        type: 'Found',
+        itemName: formData.itemName.trim(),
+        category: formData.category,
+        description: formData.description.trim(),
+        foundDate: formData.foundDate,
+        location: formData.location.trim(),
+        contact: formData.contact,
+        imageName: image ? image.name : '',
+        status: 'Pending',
+        userEmail: loggedInUser.email,
+        createdAt: new Date().toISOString()
+      };
+
+      // Get existing lost and found reports
+      const existingReports = JSON.parse(
+        localStorage.getItem('campusLostReports') || '[]'
+      );
+
+      if (!Array.isArray(existingReports)) {
+        throw new Error('Invalid saved reports data.');
+      }
+
+      // Save found report in the same list
+      existingReports.push(newReport);
+
+      localStorage.setItem(
+        'campusLostReports',
+        JSON.stringify(existingReports)
+      );
+
+      setMessage('Found item report submitted successfully!');
+
+      // Reset form
+      setFormData({
+        itemName: '',
+        category: '',
+        description: '',
+        foundDate: '',
+        location: '',
+        contact: ''
+      });
+
+      removeImage();
+
+    } catch (err) {
+      console.error('Found report saving error:', err);
+      setError('Unable to save your report. Please try again.');
+    }
   };
 
   // Reset form
@@ -177,12 +230,10 @@ function FoundItemReport() {
 
         <form onSubmit={handleSubmit}>
 
-          {/* Form Fields */}
           <div className="report-form-grid">
 
             {/* Item Name */}
             <div className="report-field">
-
               <label htmlFor="itemName">
                 Item Name <span>*</span>
               </label>
@@ -200,12 +251,10 @@ function FoundItemReport() {
                   required
                 />
               </div>
-
             </div>
 
             {/* Category */}
             <div className="report-field">
-
               <label htmlFor="category">
                 Item Category <span>*</span>
               </label>
@@ -230,12 +279,10 @@ function FoundItemReport() {
                   <option value="Other">Other</option>
                 </select>
               </div>
-
             </div>
 
             {/* Description */}
             <div className="report-field">
-
               <label htmlFor="description">
                 Description <span>*</span>
               </label>
@@ -253,12 +300,10 @@ function FoundItemReport() {
                   required
                 />
               </div>
-
             </div>
 
             {/* Found Date */}
             <div className="report-field">
-
               <label htmlFor="foundDate">
                 Found Date <span>*</span>
               </label>
@@ -276,12 +321,10 @@ function FoundItemReport() {
                   required
                 />
               </div>
-
             </div>
 
             {/* Found Location */}
             <div className="report-field">
-
               <label htmlFor="location">
                 Found Location <span>*</span>
               </label>
@@ -299,12 +342,10 @@ function FoundItemReport() {
                   required
                 />
               </div>
-
             </div>
 
             {/* Contact Number */}
             <div className="report-field">
-
               <label htmlFor="contact">
                 Contact Number <span>*</span>
               </label>
@@ -325,12 +366,10 @@ function FoundItemReport() {
                   required
                 />
               </div>
-
             </div>
 
             {/* Image Upload */}
             <div className="report-field">
-
               <label htmlFor="itemImage">
                 Upload Item Image <small>(Optional)</small>
               </label>
@@ -370,7 +409,6 @@ function FoundItemReport() {
 
                 </div>
               )}
-
             </div>
 
           </div>

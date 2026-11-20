@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Search,
   ArrowRight,
   PackageSearch
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+
+import { Link, useNavigate } from 'react-router-dom';
 
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -13,6 +14,54 @@ import Footer from '../components/Footer';
 import '../styles/Home.css';
 
 function Home() {
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Search items
+  const handleSearch = (e) => {
+    e.preventDefault();
+
+    navigate(`/search?keyword=${encodeURIComponent(searchTerm.trim())}`);
+  };
+
+  // Browse category
+  const handleCategoryClick = (category) => {
+    navigate(`/search?category=${encodeURIComponent(category)}`);
+  };
+
+  const categories = [
+    {
+      name: 'Electronics',
+      icon: '💻',
+      description: 'Phones, laptops'
+    },
+    {
+      name: 'Bags',
+      icon: '🎒',
+      description: 'Backpacks, purses'
+    },
+    {
+      name: 'ID Cards',
+      icon: '🪪',
+      description: 'College ID cards'
+    },
+    {
+      name: 'Keys',
+      icon: '🔑',
+      description: 'Room and locker keys'
+    },
+    {
+      name: 'Books',
+      icon: '📚',
+      description: 'Books and notebooks'
+    },
+    {
+      name: 'Accessories',
+      icon: '⌚',
+      description: 'Watches and more'
+    }
+  ];
+
   return (
     <>
       {/* Navbar */}
@@ -43,18 +92,20 @@ function Home() {
               </p>
 
               {/* Search Bar */}
-              <div className="hero-search">
+              <form className="hero-search" onSubmit={handleSearch}>
                 <Search size={21} />
 
                 <input
                   type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search for keys, bags, ID cards..."
                 />
 
-                <button type="button">
+                <button type="submit">
                   Search
                 </button>
-              </div>
+              </form>
 
               {/* Action Buttons */}
               <div className="hero-buttons">
@@ -106,7 +157,6 @@ function Home() {
 
           <div className="row g-4 mt-4">
 
-            {/* Step 1 */}
             <div className="col-md-6 col-lg-3">
               <div className="process-card">
                 <div className="process-icon">01</div>
@@ -118,7 +168,6 @@ function Home() {
               </div>
             </div>
 
-            {/* Step 2 */}
             <div className="col-md-6 col-lg-3">
               <div className="process-card">
                 <div className="process-icon">02</div>
@@ -130,7 +179,6 @@ function Home() {
               </div>
             </div>
 
-            {/* Step 3 */}
             <div className="col-md-6 col-lg-3">
               <div className="process-card">
                 <div className="process-icon">03</div>
@@ -142,7 +190,6 @@ function Home() {
               </div>
             </div>
 
-            {/* Step 4 */}
             <div className="col-md-6 col-lg-3">
               <div className="process-card">
                 <div className="process-icon">04</div>
@@ -177,59 +224,26 @@ function Home() {
 
           <div className="row g-4 mt-4">
 
-            {/* Electronics */}
-            <div className="col-6 col-md-4 col-lg-2">
-              <div className="category-card">
-                <div className="category-icon">💻</div>
-                <h5>Electronics</h5>
-                <p>Phones, laptops</p>
-              </div>
-            </div>
+            {categories.map((category) => (
+              <div
+                className="col-6 col-md-4 col-lg-2"
+                key={category.name}
+              >
+                <button
+                  type="button"
+                  className="category-card w-100 border-0"
+                  onClick={() => handleCategoryClick(category.name)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="category-icon">
+                    {category.icon}
+                  </div>
 
-            {/* Bags */}
-            <div className="col-6 col-md-4 col-lg-2">
-              <div className="category-card">
-                <div className="category-icon">🎒</div>
-                <h5>Bags</h5>
-                <p>Backpacks, purses</p>
+                  <h5>{category.name}</h5>
+                  <p>{category.description}</p>
+                </button>
               </div>
-            </div>
-
-            {/* ID Cards */}
-            <div className="col-6 col-md-4 col-lg-2">
-              <div className="category-card">
-                <div className="category-icon">🪪</div>
-                <h5>ID Cards</h5>
-                <p>College ID cards</p>
-              </div>
-            </div>
-
-            {/* Keys */}
-            <div className="col-6 col-md-4 col-lg-2">
-              <div className="category-card">
-                <div className="category-icon">🔑</div>
-                <h5>Keys</h5>
-                <p>Room and locker keys</p>
-              </div>
-            </div>
-
-            {/* Books */}
-            <div className="col-6 col-md-4 col-lg-2">
-              <div className="category-card">
-                <div className="category-icon">📚</div>
-                <h5>Books</h5>
-                <p>Books and notebooks</p>
-              </div>
-            </div>
-
-            {/* Accessories */}
-            <div className="col-6 col-md-4 col-lg-2">
-              <div className="category-card">
-                <div className="category-icon">⌚</div>
-                <h5>Accessories</h5>
-                <p>Watches and more</p>
-              </div>
-            </div>
+            ))}
 
           </div>
         </div>
@@ -299,9 +313,11 @@ function Home() {
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
+
                     alert(
                       'Thank you! Your message form is ready for backend integration.'
                     );
+
                     e.target.reset();
                   }}
                 >
@@ -360,7 +376,6 @@ function Home() {
 
       {/* Footer */}
       <Footer />
-
     </>
   );
 }

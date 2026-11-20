@@ -96,7 +96,7 @@ function CreateLostReport() {
     }
   };
 
-  // Submit form
+  // Submit Lost Item Report
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -108,13 +108,69 @@ function CreateLostReport() {
       return;
     }
 
-    console.log('Lost Item Report:', formData);
-    console.log('Uploaded Image:', image);
+    // Get logged-in user
+    const loggedInUser = JSON.parse(
+      localStorage.getItem('loggedInUser') || 'null'
+    );
 
-    setMessage('Lost item report submitted successfully!');
+    if (!loggedInUser?.email) {
+      setError('Please log in before submitting a report.');
+      return;
+    }
 
-    // Demo only. Connect your backend API here
-    // to save the report permanently.
+    try {
+      // Create report object
+      const newReport = {
+        id: Date.now(),
+        type: 'Lost',
+        itemName: formData.itemName.trim(),
+        category: formData.category,
+        description: formData.description.trim(),
+        lostDate: formData.lostDate,
+        location: formData.location.trim(),
+        contact: formData.contact,
+        imageName: image ? image.name : '',
+        status: 'Pending',
+        userEmail: loggedInUser.email,
+        createdAt: new Date().toISOString()
+      };
+
+      // Get existing reports
+      const existingReports = JSON.parse(
+        localStorage.getItem('campusLostReports') || '[]'
+      );
+
+      if (!Array.isArray(existingReports)) {
+        throw new Error('Invalid saved reports data.');
+      }
+
+      // Save report
+      existingReports.push(newReport);
+
+      localStorage.setItem(
+        'campusLostReports',
+        JSON.stringify(existingReports)
+      );
+
+      // Show success message
+      setMessage('Lost item report submitted successfully!');
+
+      // Clear form
+      setFormData({
+        itemName: '',
+        category: '',
+        description: '',
+        lostDate: '',
+        location: '',
+        contact: ''
+      });
+
+      removeImage();
+
+    } catch (err) {
+      console.error('Report saving error:', err);
+      setError('Unable to save your report. Please try again.');
+    }
   };
 
   // Reset form
@@ -206,7 +262,6 @@ function CreateLostReport() {
 
         <form onSubmit={handleSubmit}>
 
-          {/* Single-column form */}
           <div
             className="report-form-grid"
             style={{

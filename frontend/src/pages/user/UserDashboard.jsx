@@ -1,9 +1,12 @@
 
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../../styles/Dashboard.css';
 
 function UserDashboard() {
   const navigate = useNavigate();
+
+  const [reports, setReports] = useState([]);
 
   // Get logged-in student information
   const loggedInUser = JSON.parse(
@@ -12,13 +15,45 @@ function UserDashboard() {
 
   const studentName = loggedInUser?.fullName || 'Student User';
   const studentEmail = loggedInUser?.email || '';
-  const firstLetter = studentName.charAt(0).toUpperCase();
+
+  // Load reports belonging to logged-in user
+  useEffect(() => {
+    const loadReports = () => {
+      try {
+        const savedReports = JSON.parse(
+          localStorage.getItem('campusLostReports') || '[]'
+        );
+
+        const userReports = savedReports.filter(
+          (report) =>
+            report.userEmail === studentEmail
+        );
+
+        setReports(userReports);
+      } catch (error) {
+        console.error('Unable to load reports:', error);
+        setReports([]);
+      }
+    };
+
+    loadReports();
+
+    // Refresh reports when returning to dashboard
+    window.addEventListener('focus', loadReports);
+
+    return () => {
+      window.removeEventListener('focus', loadReports);
+    };
+  }, [studentEmail]);
 
   // Logout
   const handleLogout = () => {
     localStorage.removeItem('loggedInUser');
     navigate('/login');
   };
+
+  // Statistics
+  const totalReports = reports.length;
 
   return (
     <div className="dashboard-layout">
@@ -69,13 +104,13 @@ function UserDashboard() {
           </Link>
 
           <button
-  type="button"
-  className="sidebar-link logout-button"
-  onClick={handleLogout}
->
-  <span>↪</span>
-  Logout
-</button>
+            type="button"
+            className="sidebar-link logout-button"
+            onClick={handleLogout}
+          >
+            <span>↪</span>
+            Logout
+          </button>
 
         </nav>
 
@@ -108,20 +143,20 @@ function UserDashboard() {
             </Link>
 
             <div
-  className="user-info profile-trigger"
-  onClick={() => navigate('/profile')}
-  title="View Profile"
->
-  <div className="user-avatar">
-    {studentName.charAt(0).toUpperCase()}
-  </div>
+              className="user-info profile-trigger"
+              onClick={() => navigate('/profile')}
+              title="View Profile"
+            >
+              <div className="user-avatar">
+                {studentName.charAt(0).toUpperCase()}
+              </div>
 
-  <div>
-    <strong>{studentName}</strong>
+              <div>
+                <strong>{studentName}</strong>
+                <small>Student Account</small>
+              </div>
+            </div>
 
-    <small>Student Account</small>
-  </div>
-</div>
           </div>
 
         </header>
@@ -205,6 +240,7 @@ function UserDashboard() {
         {/* Recent Reports and Claim Status */}
         <section className="dashboard-bottom-grid">
 
+          {/* My Recent Reports */}
           <div className="dashboard-panel">
 
             <div className="panel-heading">
@@ -212,36 +248,59 @@ function UserDashboard() {
               <Link to="/search">View All →</Link>
             </div>
 
-            <div className="report-item">
-              <div className="report-image">🎒</div>
+            {reports.length === 0 ? (
 
-              <div className="report-details">
-                <strong>Black Backpack</strong>
-                <p>Lost • Library</p>
-                <small>Sample report</small>
+              <div className="empty-reports">
+                <div style={{ fontSize: '35px' }}>📭</div>
+                <p>You have not submitted any reports yet.</p>
+                <small>Your submitted reports will appear here.</small>
               </div>
 
-              <span className="status-badge pending">
-                Pending
-              </span>
-            </div>
+            ) : (
 
-            <div className="report-item">
-              <div className="report-image">🎧</div>
+              reports
+                .slice()
+                .reverse()
+                .slice(0, 5)
+                .map((report) => (
 
-              <div className="report-details">
-                <strong>Wireless Earphones</strong>
-                <p>Found • Cafeteria</p>
-                <small>Sample report</small>
-              </div>
+                  <div className="report-item" key={report.id}>
 
-              <span className="status-badge available">
-                Available
-              </span>
-            </div>
+                    <div className="report-image">
+                      {report.type === 'Lost' ? '⚠️' : '📦'}
+                    </div>
+
+                    <div className="report-details">
+
+                      <strong>{report.itemName}</strong>
+
+                      <p>
+                        {report.type} • {report.location}
+                      </p>
+
+                      <small>{report.category}</small>
+
+                      <br />
+
+                      <small>
+                        {new Date(report.createdAt).toLocaleDateString()}
+                      </small>
+
+                    </div>
+
+                    <span className="status-badge pending">
+                      {report.status}
+                    </span>
+
+                  </div>
+
+                ))
+
+            )}
 
           </div>
 
+          {/* Claim Status */}
           <div className="dashboard-panel">
 
             <div className="panel-heading">
@@ -291,7 +350,7 @@ function UserDashboard() {
             <div className="stat-card">
               <span className="stat-icon blue">📦</span>
               <div>
-                <h3>02</h3>
+                <h3>{String(totalReports).padStart(2, '0')}</h3>
                 <p>Total Reports</p>
               </div>
             </div>
