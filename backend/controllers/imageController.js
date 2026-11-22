@@ -1,6 +1,8 @@
 
 const fs = require("fs/promises");
 
+const ALLOWED_UPLOAD_STATUSES = ["pending", "approved"];
+
 // Delete uploaded file safely
 const deleteUploadedFile = async (filePath) => {
   if (!filePath) return;
@@ -16,7 +18,7 @@ const deleteUploadedFile = async (filePath) => {
 
 // Upload image controller
 const uploadReportImage = async (req, res) => {
-  // Report ownership already verified by middleware
+  // Ownership already verified by middleware
   const report = req.report;
 
   if (!req.file) {
@@ -26,13 +28,17 @@ const uploadReportImage = async (req, res) => {
     });
   }
 
-  // Prevent uploads to withdrawn or inactive reports
-  if (report.status === "withdrawn" || report.isActive === false) {
+  // Allow pending reports and active approved reports only
+  if (
+    !ALLOWED_UPLOAD_STATUSES.includes(report.status) ||
+    (report.status === "approved" && report.isActive !== true)
+  ) {
     await deleteUploadedFile(req.file.path);
 
     return res.status(409).json({
       success: false,
-      message: "Cannot upload images to a withdrawn or inactive report"
+      message:
+        "Images can only be uploaded to pending or active approved reports"
     });
   }
 
@@ -42,18 +48,25 @@ const uploadReportImage = async (req, res) => {
 
     // Link image to report
     report.images.push(imageUrl);
+
+    // New images must be reviewed by admin
+    report.status = "pending";
+    report.isActive = false;
+    report.rejectionReason = null;
+
     await report.save();
 
     return res.status(200).json({
       success: true,
-      message: "Image uploaded and linked to report successfully",
+      message:
+        "Image uploaded successfully. Report is pending admin approval.",
       data: {
         reportId: report._id,
         imageUrl,
-        images: report.images
+        images: report.images,
+        status: report.status
       }
     });
-
   } catch (error) {
     await deleteUploadedFile(req.file?.path);
 

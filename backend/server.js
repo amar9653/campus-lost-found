@@ -1,3 +1,4 @@
+
 require("dotenv").config();
 
 const express = require("express");
@@ -7,11 +8,12 @@ const connectDB = require("./config/db");
 
 const reportRoutes = require("./routes/reportRoutes");
 const authRoutes = require("./routes/authRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB (skip if running in test environment where MongoMemoryServer is connected)
+// Connect to MongoDB (skip in test environment)
 if (process.env.NODE_ENV !== "test") {
   connectDB();
 }
@@ -54,6 +56,9 @@ app.use("/api/auth", authRoutes);
 
 // Lost & Found Report APIs
 app.use("/api/reports", reportRoutes);
+
+// Admin APIs (JWT + Admin Role Required)
+app.use("/api/admin", adminRoutes);
 
 // Handle unknown API routes
 app.use("/api", (req, res) => {
