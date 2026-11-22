@@ -2,6 +2,13 @@ const ItemReport = require("../models/ItemReport");
 
 const VALID_TYPES = ["lost", "found"];
 
+
+// Escape regex special characters in user search input
+const escapeRegex = (value) => {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
+
+
 // Helper: Validate YYYY-MM-DD dates
 const isValidDate = (value) => {
   if (typeof value !== "string") return false;
@@ -99,6 +106,7 @@ const createReport = async (req, res) => {
 };
 
 // GET REPORTS + SEARCH + PAGINATION + SORTING
+
 const getReports = async (req, res) => {
   const {
     keyword,
@@ -124,6 +132,7 @@ const getReports = async (req, res) => {
     sort
   };
 
+  // Validate query parameter types
   for (const [field, value] of Object.entries(filters)) {
     if (value !== undefined && typeof value !== "string") {
       return res.status(400).json({
@@ -133,6 +142,34 @@ const getReports = async (req, res) => {
     }
   }
 
+  // Validate search input lengths
+  const searchFields = {
+    keyword: 100,
+    category: 100,
+    location: 150
+  };
+
+  for (const [field, maxLength] of Object.entries(searchFields)) {
+    const value = filters[field];
+
+    if (value !== undefined) {
+      if (!value.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: `${field} cannot be empty`
+        });
+      }
+
+      if (value.trim().length > maxLength) {
+        return res.status(400).json({
+          success: false,
+          message: `${field} cannot exceed ${maxLength} characters`
+        });
+      }
+    }
+  }
+
+  // Validate report type
   if (type !== undefined && !VALID_TYPES.includes(type)) {
     return res.status(400).json({
       success: false,
@@ -140,6 +177,7 @@ const getReports = async (req, res) => {
     });
   }
 
+  // Validate date filters
   if (
     (fromDate !== undefined && !isValidDate(fromDate)) ||
     (toDate !== undefined && !isValidDate(toDate))
@@ -157,6 +195,7 @@ const getReports = async (req, res) => {
     });
   }
 
+  // Validate pagination
   const isPositiveInteger = (value) => /^[1-9]\d*$/.test(value);
 
   if (!isPositiveInteger(page) || !Number.isSafeInteger(Number(page))) {
@@ -177,7 +216,9 @@ const getReports = async (req, res) => {
     });
   }
 
+  // Validate sorting
   const allowedSortValues = ["newest", "oldest"];
+
   if (!allowedSortValues.includes(sort)) {
     return res.status(400).json({
       success: false,
@@ -188,6 +229,13 @@ const getReports = async (req, res) => {
   const pageNumber = Number(page);
   const limitNumber = Number(limit);
   const skip = (pageNumber - 1) * limitNumber;
+
+  if (!Number.isSafeInteger(skip)) {
+    return res.status(400).json({
+      success: false,
+      message: "Pagination offset is too large"
+    });
+  }
 
   // Build MongoDB query
   const query = {
@@ -200,22 +248,32 @@ const getReports = async (req, res) => {
   }
 
   if (category) {
-    query.category = { $regex: new RegExp(category.trim(), "i") };
+    query.category = {
+      $regex: new RegExp(escapeRegex(category.trim()), "i")
+    };
   }
 
   if (location) {
-    query.location = { $regex: new RegExp(location.trim(), "i") };
+    query.location = {
+      $regex: new RegExp(escapeRegex(location.trim()), "i")
+    };
   }
 
   if (keyword) {
+    const safeKeyword = new RegExp(
+      escapeRegex(keyword.trim()),
+      "i"
+    );
+
     query.$or = [
-      { itemName: { $regex: new RegExp(keyword.trim(), "i") } },
-      { description: { $regex: new RegExp(keyword.trim(), "i") } }
+      { itemName: { $regex: safeKeyword } },
+      { description: { $regex: safeKeyword } }
     ];
   }
 
   if (fromDate || toDate) {
     query.eventDate = {};
+
     if (fromDate) query.eventDate.$gte = fromDate;
     if (toDate) query.eventDate.$lte = toDate;
   }
@@ -224,6 +282,7 @@ const getReports = async (req, res) => {
 
   try {
     const total = await ItemReport.countDocuments(query);
+
     const reports = await ItemReport.find(query)
       .populate("user", "name email")
       .sort({ createdAt: sortOrder })
@@ -269,8 +328,10 @@ const getMyReports = async (req, res) => {
 };
 
 // GET SINGLE REPORT BY ID
+
 const getReportById = async (req, res) => {
   const { id } = req.params;
+
   const objectIdPattern = /^[a-fA-F0-9]{24}$/;
 
   if (!objectIdPattern.test(id)) {
@@ -281,7 +342,12 @@ const getReportById = async (req, res) => {
   }
 
   try {
-    const report = await ItemReport.findById(id).populate("user", "name email");
+    // Only approved and active reports are publicly visible
+    const report = await ItemReport.findOne({
+      _id: id,
+      status: "approved",
+      isActive: true
+    }).populate("user", "name email");
 
     if (!report) {
       return res.status(404).json({
@@ -294,14 +360,17 @@ const getReportById = async (req, res) => {
       success: true,
       data: report
     });
+
   } catch (error) {
+    console.error("Error fetching report:", error);
+
     return res.status(500).json({
       success: false,
-      message: "Error fetching report",
-      error: error.message
+      message: "Error fetching report"
     });
   }
 };
+
 
 // UPDATE REPORT (Ownership verified by middleware)
 
@@ -409,12 +478,22 @@ const updateReport = async (req, res) => {
 
 
 // WITHDRAW REPORT (Ownership verified by middleware)
+
 const withdrawReport = async (req, res) => {
   const report = req.report; // Set by verifyReportOwnership middleware
 
   try {
+    // Prevent withdrawing an already withdrawn report
+    if (report.status === "withdrawn" || report.isActive === false) {
+      return res.status(409).json({
+        success: false,
+        message: "This report has already been withdrawn"
+      });
+    }
+
     report.status = "withdrawn";
     report.isActive = false;
+
     await report.save();
 
     return res.status(200).json({
@@ -430,6 +509,7 @@ const withdrawReport = async (req, res) => {
     });
   }
 };
+
 
 module.exports = {
   createReport,
