@@ -1,9 +1,22 @@
+
 const fs = require("fs/promises");
-const path = require("path");
+
+// Delete uploaded file safely
+const deleteUploadedFile = async (filePath) => {
+  if (!filePath) return;
+
+  try {
+    await fs.unlink(filePath);
+  } catch (error) {
+    if (error.code !== "ENOENT") {
+      console.error("Image cleanup failed:", error);
+    }
+  }
+};
 
 // Upload image controller
 const uploadReportImage = async (req, res) => {
-  // Report is already validated and ownership verified via verifyReportOwnership middleware
+  // Report ownership already verified by middleware
   const report = req.report;
 
   if (!req.file) {
@@ -13,10 +26,22 @@ const uploadReportImage = async (req, res) => {
     });
   }
 
+  // Prevent uploads to withdrawn or inactive reports
+  if (report.status === "withdrawn" || report.isActive === false) {
+    await deleteUploadedFile(req.file.path);
+
+    return res.status(409).json({
+      success: false,
+      message: "Cannot upload images to a withdrawn or inactive report"
+    });
+  }
+
   try {
     const filename = req.file.filename;
-    // Add image to report's image list
-    report.images.push(`/uploads/${filename}`);
+    const imageUrl = `/uploads/${filename}`;
+
+    // Link image to report
+    report.images.push(imageUrl);
     await report.save();
 
     return res.status(200).json({
@@ -24,22 +49,19 @@ const uploadReportImage = async (req, res) => {
       message: "Image uploaded and linked to report successfully",
       data: {
         reportId: report._id,
-        imageUrl: `/uploads/${filename}`,
+        imageUrl,
         images: report.images
       }
     });
+
   } catch (error) {
-    if (req.file?.path) {
-      try {
-        await fs.unlink(req.file.path);
-      } catch (err) {
-        console.error("Cleanup error:", err);
-      }
-    }
+    await deleteUploadedFile(req.file?.path);
+
+    console.error("Image upload failed:", error);
+
     return res.status(500).json({
       success: false,
-      message: "Failed to save image to report",
-      error: error.message
+      message: "Failed to save image to report"
     });
   }
 };

@@ -304,8 +304,18 @@ const getReportById = async (req, res) => {
 };
 
 // UPDATE REPORT (Ownership verified by middleware)
+
 const updateReport = async (req, res) => {
-  const report = req.report; // Set by verifyReportOwnership middleware
+  // Ownership already verified by middleware
+  const report = req.report;
+
+  // Prevent editing withdrawn or inactive reports
+  if (report.status === "withdrawn" || report.isActive === false) {
+    return res.status(409).json({
+      success: false,
+      message: "Cannot update a withdrawn or inactive report"
+    });
+  }
 
   if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
     return res.status(400).json({
@@ -333,7 +343,10 @@ const updateReport = async (req, res) => {
     });
   }
 
-  const invalidFields = updates.filter((field) => !allowedFields.includes(field));
+  const invalidFields = updates.filter(
+    (field) => !allowedFields.includes(field)
+  );
+
   if (invalidFields.length > 0) {
     return res.status(400).json({
       success: false,
@@ -341,16 +354,28 @@ const updateReport = async (req, res) => {
     });
   }
 
+  // Validate date field against report type
+  const correctDateField =
+    report.type === "lost" ? "lostDate" : "foundDate";
+
   for (const field of updates) {
     const value = req.body[field];
 
     if (field === "lostDate" || field === "foundDate") {
+      if (field !== correctDateField) {
+        return res.status(400).json({
+          success: false,
+          message: `Only ${correctDateField} can be updated for this report`
+        });
+      }
+
       if (!isValidDate(value)) {
         return res.status(400).json({
           success: false,
           message: `${field} must be a valid YYYY-MM-DD date`
         });
       }
+
       report.eventDate = value;
     } else {
       if (typeof value !== "string" || !value.trim()) {
@@ -359,25 +384,29 @@ const updateReport = async (req, res) => {
           message: `${field} must be a non-empty string`
         });
       }
+
       report[field] = value.trim();
     }
   }
 
   try {
     await report.save();
+
     return res.status(200).json({
       success: true,
       message: "Report updated successfully",
       data: report
     });
   } catch (error) {
+    console.error("Report update failed:", error);
+
     return res.status(500).json({
       success: false,
-      message: "Error updating report",
-      error: error.message
+      message: "Error updating report"
     });
   }
 };
+
 
 // WITHDRAW REPORT (Ownership verified by middleware)
 const withdrawReport = async (req, res) => {
