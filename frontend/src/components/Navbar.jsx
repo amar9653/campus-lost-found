@@ -1,9 +1,11 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { UserRound } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { UserRound, Search } from 'lucide-react';
 
 function Navbar() {
+  const location = useLocation();
+
   return (
     <nav className="navbar navbar-expand-lg bg-white shadow-sm py-3">
       <div className="container">
@@ -29,8 +31,8 @@ function Navbar() {
 
         {/* Navigation Links */}
         <div className="collapse navbar-collapse" id="mainNavbar">
-
           <ul className="navbar-nav mx-auto gap-lg-3">
+
             <li className="nav-item">
               <Link className="nav-link" to="/">
                 Home
@@ -38,21 +40,31 @@ function Navbar() {
             </li>
 
             <li className="nav-item">
-              <a className="nav-link" href="#how-it-works">
-                How It Works
-              </a>
+              <Link
+                className={`nav-link ${location.pathname === '/search' ? 'active' : ''}`}
+                to="/search"
+              >
+                <Search size={16} className="me-1" />
+                Browse Found Items
+              </Link>
             </li>
 
             <li className="nav-item">
-              <a className="nav-link" href="#categories">
-                Categories
-              </a>
+              <Link className="nav-link" to="/#how-it-works">
+                How It Works
+              </Link>
             </li>
+
+            <li className="nav-item">
+              <Link className="nav-link" to="/#categories">
+                Categories
+              </Link>
+            </li>
+
           </ul>
 
-          {/* Login and Register Buttons */}
+          {/* Visitor Login and Register */}
           <div className="d-flex gap-2 align-items-center">
-
             <Link to="/login" className="btn btn-outline-primary">
               Login
             </Link>
@@ -61,7 +73,6 @@ function Navbar() {
               <UserRound size={17} className="me-1" />
               Register
             </Link>
-
           </div>
         </div>
       </div>

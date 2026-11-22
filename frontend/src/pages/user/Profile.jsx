@@ -18,15 +18,15 @@ function Profile() {
     localStorage.getItem('loggedInUser') || 'null'
   );
 
-  const initialProfile = {
-    name: loggedInUser?.fullName || 'Student User',
-    email: loggedInUser?.email || '',
-    phone: loggedInUser?.phone || '',
-    studentId: loggedInUser?.studentId || '',
-    department: loggedInUser?.department || 'Computer Engineering',
-    role: 'Student',
-    college: 'Sanjivani College Of Engineering, Kopargaon'
-  };
+ const initialProfile = {
+  name: loggedInUser?.fullName || 'Student User',
+  email: loggedInUser?.email || '',
+  phone: loggedInUser?.phone || '',
+  studentId: loggedInUser?.studentId || '',
+  department: loggedInUser?.department || '',
+  role: loggedInUser?.role || 'Student',
+  college: loggedInUser?.college || 'College not provided'
+};
 
   const [profile, setProfile] = useState(initialProfile);
   const [savedProfile, setSavedProfile] = useState(initialProfile);
