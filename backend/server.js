@@ -3,11 +3,20 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
+const connectDB = require("./config/db");
 
 const reportRoutes = require("./routes/reportRoutes");
+const authRoutes = require("./routes/authRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Connect to MongoDB (skip in test environment)
+if (process.env.NODE_ENV !== "test") {
+  connectDB();
+}
 
 // Middleware
 app.use(
@@ -17,6 +26,9 @@ app.use(
 );
 
 app.use(express.json());
+
+// Serve static uploaded files
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Handle invalid JSON request bodies
 app.use((err, req, res, next) => {
@@ -39,8 +51,14 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// Authentication APIs
+app.use("/api/auth", authRoutes);
+
 // Lost & Found Report APIs
 app.use("/api/reports", reportRoutes);
+
+// Admin APIs (JWT + Admin Role Required)
+app.use("/api/admin", adminRoutes);
 
 // Handle unknown API routes
 app.use("/api", (req, res) => {
@@ -60,7 +78,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Backend running at http://localhost:${PORT}`);
-});
+// Start server if not in test
+if (process.env.NODE_ENV !== "test") {
+  app.listen(PORT, () => {
+    console.log(`Backend running at http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;

@@ -1,11 +1,19 @@
 
+const ItemReport = require("../models/ItemReport");
+
 const VALID_TYPES = ["lost", "found"];
+const EDITABLE_STATUSES = ["pending", "approved"];
 
-// Helper: Validate YYYY-MM-DD dates
+// Escape special characters before using user input in a regular expression.
+const escapeRegex = (value) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// Validate an actual calendar date in YYYY-MM-DD format.
 const isValidDate = (value) => {
-  if (typeof value !== "string") return false;
-
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+  if (
+    typeof value !== "string" ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(value)
+  ) {
     return false;
   }
 
@@ -18,8 +26,7 @@ const isValidDate = (value) => {
 };
 
 // CREATE LOST / FOUND REPORT
-const createReport = (req, res) => {
-  // Validate request body before destructuring
+const createReport = async (req, res) => {
   if (
     !req.body ||
     typeof req.body !== "object" ||
@@ -70,28 +77,58 @@ const createReport = (req, res) => {
   if (!isValidDate(eventDate)) {
     return res.status(400).json({
       success: false,
-      message: `Valid ${type === "lost" ? "lostDate" : "foundDate"} is required`
+      message: `Valid ${
+        type === "lost" ? "lostDate" : "foundDate"
+      } is required`
     });
   }
 
-  // Database integration pending
-  return res.status(501).json({
-    success: false,
-    message: "Report validation passed. Database integration pending.",
-    validatedData: {
+  if (
+    contact !== undefined &&
+    contact !== null &&
+    typeof contact !== "string"
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "contact must be a string or null"
+    });
+  }
+
+  try {
+    const report = await ItemReport.create({
       type,
       itemName: itemName.trim(),
       category: category.trim(),
       description: description.trim(),
       location: location.trim(),
       eventDate,
-      contact: typeof contact === "string" ? contact.trim() : null
-    }
-  });
+      contact:
+        typeof contact === "string"
+          ? contact.trim() || null
+          : null,
+      user: req.user._id,
+      status: "pending",
+      isActive: false
+    });
+
+    return res.status(201).json({
+      success: true,
+      message:
+        "Report submitted successfully and is pending admin approval",
+      data: report
+    });
+  } catch (error) {
+    console.error("Error creating report:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Error creating report"
+    });
+  }
 };
 
 // GET REPORTS + SEARCH + PAGINATION + SORTING
-const getReports = (req, res) => {
+const getReports = async (req, res) => {
   const {
     keyword,
     category,
@@ -116,7 +153,6 @@ const getReports = (req, res) => {
     sort
   };
 
-  // Validate query parameter types
   for (const [field, value] of Object.entries(filters)) {
     if (value !== undefined && typeof value !== "string") {
       return res.status(400).json({
@@ -126,7 +162,32 @@ const getReports = (req, res) => {
     }
   }
 
-  // Validate report type
+  const searchFields = {
+    keyword: 100,
+    category: 100,
+    location: 150
+  };
+
+  for (const [field, maxLength] of Object.entries(searchFields)) {
+    const value = filters[field];
+
+    if (value !== undefined) {
+      if (!value.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: `${field} cannot be empty`
+        });
+      }
+
+      if (value.trim().length > maxLength) {
+        return res.status(400).json({
+          success: false,
+          message: `${field} cannot exceed ${maxLength} characters`
+        });
+      }
+    }
+  }
+
   if (type !== undefined && !VALID_TYPES.includes(type)) {
     return res.status(400).json({
       success: false,
@@ -134,7 +195,6 @@ const getReports = (req, res) => {
     });
   }
 
-  // Validate dates
   if (
     (fromDate !== undefined && !isValidDate(fromDate)) ||
     (toDate !== undefined && !isValidDate(toDate))
@@ -152,10 +212,8 @@ const getReports = (req, res) => {
     });
   }
 
-  // Validate pagination parameters
-  const isPositiveInteger = (value) => {
-    return /^[1-9]\d*$/.test(value);
-  };
+  const isPositiveInteger = (value) =>
+    /^[1-9]\d*$/.test(value);
 
   if (
     !isPositiveInteger(page) ||
@@ -178,10 +236,7 @@ const getReports = (req, res) => {
     });
   }
 
-  // Validate sorting
-  const allowedSortValues = ["newest", "oldest"];
-
-  if (!allowedSortValues.includes(sort)) {
+  if (!["newest", "oldest"].includes(sort)) {
     return res.status(400).json({
       success: false,
       message: "sort must be 'newest' or 'oldest'"
@@ -190,89 +245,168 @@ const getReports = (req, res) => {
 
   const pageNumber = Number(page);
   const limitNumber = Number(limit);
+  const skip = (pageNumber - 1) * limitNumber;
 
-  // Prevent unsafe pagination offset
-  const offset = (pageNumber - 1) * limitNumber;
-
-  if (!Number.isSafeInteger(offset)) {
+  if (!Number.isSafeInteger(skip)) {
     return res.status(400).json({
       success: false,
       message: "Pagination offset is too large"
     });
   }
 
-  // Normalize search filters
-  const normalizedFilters = {
-    keyword: keyword?.trim() || null,
-    category: category?.trim() || null,
-    location: location?.trim() || null,
-    type: type || null,
-    fromDate: fromDate || null,
-    toDate: toDate || null,
-    status: "approved",
-    activeOnly: true
+  // Only approved and active reports are public.
+  const query = {
+    isActive: true,
+    status: "approved"
   };
 
-  // Pagination configuration
-  const pagination = {
-    page: pageNumber,
-    limit: limitNumber,
-    offset
-  };
+  if (type) {
+    query.type = type;
+  }
 
-  // Sorting configuration
-  const sorting = {
-    sort,
-    order: sort === "newest" ? "desc" : "asc"
-  };
+  if (category) {
+    query.category = {
+      $regex: new RegExp(escapeRegex(category.trim()), "i")
+    };
+  }
 
-  // Actual MongoDB query will be integrated later
-  return res.status(501).json({
-    success: false,
-    message: "Search, pagination and sorting validated. Database integration pending.",
-    filters: normalizedFilters,
-    pagination,
-    sorting
-  });
+  if (location) {
+    query.location = {
+      $regex: new RegExp(escapeRegex(location.trim()), "i")
+    };
+  }
+
+  if (keyword) {
+    const safeKeyword = new RegExp(
+      escapeRegex(keyword.trim()),
+      "i"
+    );
+
+    query.$or = [
+      { itemName: { $regex: safeKeyword } },
+      { description: { $regex: safeKeyword } }
+    ];
+  }
+
+  if (fromDate || toDate) {
+    query.eventDate = {};
+
+    if (fromDate) {
+      query.eventDate.$gte = fromDate;
+    }
+
+    if (toDate) {
+      query.eventDate.$lte = toDate;
+    }
+  }
+
+  try {
+    const total = await ItemReport.countDocuments(query);
+
+    const reports = await ItemReport.find(query)
+      .populate("user", "name email")
+      .sort({ createdAt: sort === "newest" ? -1 : 1 })
+      .skip(skip)
+      .limit(limitNumber);
+
+    return res.status(200).json({
+      success: true,
+      count: reports.length,
+      pagination: {
+        page: pageNumber,
+        limit: limitNumber,
+        totalPages: Math.ceil(total / limitNumber) || 1,
+        totalRecords: total
+      },
+      data: reports
+    });
+  } catch (error) {
+    console.error("Error fetching reports:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching reports"
+    });
+  }
 };
 
-// GET SINGLE REPORT
-const getReportById = (req, res) => {
+// GET USER'S OWN REPORTS
+const getMyReports = async (req, res) => {
+  try {
+    const reports = await ItemReport.find({
+      user: req.user._id
+    }).sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      count: reports.length,
+      data: reports
+    });
+  } catch (error) {
+    console.error("Error fetching user reports:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching user reports"
+    });
+  }
+};
+
+// GET SINGLE REPORT BY ID
+const getReportById = async (req, res) => {
   const { id } = req.params;
 
-  // Validate MongoDB ObjectID format
-  const objectIdPattern = /^[a-fA-F0-9]{24}$/;
-
-  if (!objectIdPattern.test(id)) {
+  if (!/^[a-fA-F0-9]{24}$/.test(id)) {
     return res.status(400).json({
       success: false,
       message: "Invalid report ID format"
     });
   }
 
-  // Actual database lookup will be added later
-  return res.status(501).json({
-    success: false,
-    message: "Report ID validated. Database integration pending.",
-    reportId: id
-  });
+  try {
+    // Only approved and active reports are publicly visible.
+    const report = await ItemReport.findOne({
+      _id: id,
+      status: "approved",
+      isActive: true
+    }).populate("user", "name email");
+
+    if (!report) {
+      return res.status(404).json({
+        success: false,
+        message: "Report not found"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: report
+    });
+  } catch (error) {
+    console.error("Error fetching report:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching report"
+    });
+  }
 };
 
-// UPDATE REPORT
-const updateReport = (req, res) => {
-  const { id } = req.params;
+// UPDATE REPORT (Ownership verified by middleware)
+const updateReport = async (req, res) => {
+  const report = req.report;
 
-  // Validate MongoDB ObjectID
-  const objectIdPattern = /^[a-fA-F0-9]{24}$/;
-
-  if (!objectIdPattern.test(id)) {
-    return res.status(400).json({
+  if (
+    !EDITABLE_STATUSES.includes(report.status) ||
+    (report.status === "approved" && report.isActive !== true)
+  ) {
+    return res.status(409).json({
       success: false,
-      message: "Invalid report ID format"
+      message:
+        "Only pending or active approved reports can be updated"
     });
   }
 
-  // Validate request body
   if (
     !req.body ||
     typeof req.body !== "object" ||
@@ -284,7 +418,6 @@ const updateReport = (req, res) => {
     });
   }
 
-  // Only these fields can be updated
   const allowedFields = [
     "itemName",
     "category",
@@ -297,7 +430,6 @@ const updateReport = (req, res) => {
 
   const updates = Object.keys(req.body);
 
-  // Reject empty update requests
   if (updates.length === 0) {
     return res.status(400).json({
       success: false,
@@ -305,7 +437,6 @@ const updateReport = (req, res) => {
     });
   }
 
-  // Reject unauthorized fields
   const invalidFields = updates.filter(
     (field) => !allowedFields.includes(field)
   );
@@ -317,68 +448,129 @@ const updateReport = (req, res) => {
     });
   }
 
-  const validatedUpdates = {};
+  const correctDateField =
+    report.type === "lost" ? "lostDate" : "foundDate";
 
-  // Validate submitted fields
+  const changes = {};
+
   for (const field of updates) {
     const value = req.body[field];
 
     if (field === "lostDate" || field === "foundDate") {
-      if (!isValidDate(value)) {
+      if (field !== correctDateField) {
         return res.status(400).json({
           success: false,
-          message: `${field} must be a valid YYYY-MM-DD date`
+          message:
+            `Only ${correctDateField} can be updated for this report`
         });
       }
 
-      validatedUpdates[field] = value;
+      if (!isValidDate(value)) {
+        return res.status(400).json({
+          success: false,
+          message:
+            `${field} must be a valid YYYY-MM-DD date`
+        });
+      }
+
+      changes.eventDate = value;
+    } else if (field === "contact") {
+      if (
+        value !== null &&
+        typeof value !== "string"
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "contact must be a string or null"
+        });
+      }
+
+      changes.contact =
+        typeof value === "string"
+          ? value.trim() || null
+          : null;
     } else {
-      if (typeof value !== "string" || !value.trim()) {
+      if (
+        typeof value !== "string" ||
+        !value.trim()
+      ) {
         return res.status(400).json({
           success: false,
           message: `${field} must be a non-empty string`
         });
       }
 
-      validatedUpdates[field] = value.trim();
+      changes[field] = value.trim();
     }
   }
 
-  // Database update and ownership verification pending
-  return res.status(501).json({
-    success: false,
-    message: "Update validation passed. Database and authentication integration pending.",
-    reportId: id,
-    validatedUpdates
-  });
+  try {
+    Object.assign(report, changes);
+
+    // Editing requires fresh admin approval.
+    report.status = "pending";
+    report.isActive = false;
+    report.rejectionReason = null;
+
+    await report.save();
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "Report updated successfully and is pending admin approval",
+      data: report
+    });
+  } catch (error) {
+    console.error("Report update failed:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Error updating report"
+    });
+  }
 };
 
-// WITHDRAW REPORT
-const withdrawReport = (req, res) => {
-  const { id } = req.params;
+// WITHDRAW REPORT (Ownership verified by middleware)
+const withdrawReport = async (req, res) => {
+  const report = req.report;
 
-  // Validate MongoDB ObjectID format
-  const objectIdPattern = /^[a-fA-F0-9]{24}$/;
-
-  if (!objectIdPattern.test(id)) {
-    return res.status(400).json({
+  if (
+    !EDITABLE_STATUSES.includes(report.status) ||
+    (report.status === "approved" && report.isActive !== true)
+  ) {
+    return res.status(409).json({
       success: false,
-      message: "Invalid report ID format"
+      message:
+        "Only pending or active approved reports can be withdrawn"
     });
   }
 
-  // Database and authentication integration pending
-  return res.status(501).json({
-    success: false,
-    message: "Withdraw request validated. Database and authentication integration pending.",
-    reportId: id
-  });
+  try {
+    report.status = "withdrawn";
+    report.isActive = false;
+    report.rejectionReason = null;
+
+    await report.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Report successfully withdrawn",
+      data: report
+    });
+  } catch (error) {
+    console.error("Error withdrawing report:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Error withdrawing report"
+    });
+  }
 };
 
-// EXPORT CONTROLLERS
 module.exports = {
   createReport,
   getReports,
+  getMyReports,
   getReportById,
   updateReport,
   withdrawReport

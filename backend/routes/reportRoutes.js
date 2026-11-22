@@ -1,39 +1,43 @@
-
 const express = require("express");
 const router = express.Router();
 
 const {
   createReport,
   getReports,
+  getMyReports,
   getReportById,
   updateReport,
   withdrawReport
 } = require("../controllers/reportController");
+const { uploadReportImage } = require("../controllers/imageController");
 
-// Public report routes
+const { protect } = require("../middleware/authMiddleware");
+const { verifyReportOwnership } = require("../middleware/ownershipMiddleware");
+const upload = require("../middleware/uploadMiddleware");
+const validateImage = require("../middleware/validateImage");
+const uploadErrorHandler = require("../middleware/uploadErrorHandler");
+
+// Public routes
 router.get("/", getReports);
 router.get("/:id", getReportById);
 
-// Create report
-// TODO: Add JWT authentication before production
-router.post("/", createReport);
+// Protected routes (Requires JWT authentication)
+router.post("/", protect, createReport);
+router.get("/user/mine", protect, getMyReports);
 
-// Update report
-// TODO: Add authentication and ownership checks
-router.patch("/:id", updateReport);
+// Protected routes with Ownership Verification
+router.patch("/:id", protect, verifyReportOwnership, updateReport);
+router.patch("/:id/withdraw", protect, verifyReportOwnership, withdrawReport);
 
-// Withdraw report
-// TODO: Add authentication and ownership checks
-router.patch("/:id/withdraw", withdrawReport);
-
-// Image upload route
-// Disabled until authentication, report ownership,
-// image signature validation and DB integration are ready.
-router.post("/:id/images", (req, res) => {
-  return res.status(503).json({
-    success: false,
-    message: "Image upload is temporarily unavailable"
-  });
-});
+// Upload image with authentication and ownership check
+router.post(
+  "/:id/images",
+  protect,
+  verifyReportOwnership,
+  upload.single("image"),
+  uploadErrorHandler,
+  validateImage,
+  uploadReportImage
+);
 
 module.exports = router;
