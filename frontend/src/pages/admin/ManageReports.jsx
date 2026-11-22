@@ -1,15 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Search,
   CheckCircle,
   XCircle,
   Eye,
-  Archive
+  Archive,
+  ImageOff
 } from 'lucide-react';
 import DataTable from '../../components/admin/DataTable';
 import StatusBadge from '../../components/admin/StatusBadge';
 import ConfirmationModal from '../../components/admin/ConfirmationModal';
-import { useAdmin } from '../../context/AdminContext';
+import { useAdmin } from '../../context/useAdmin';
 
 const ManageReports = () => {
   const { reports, categories, updateReportStatus, archiveReport } = useAdmin();
@@ -78,8 +79,14 @@ const ManageReports = () => {
       }
 
       // Date filter
-      if (dateFilter && item.date !== dateFilter) {
-        return false;
+      if (dateFilter) {
+        const reportDate = item.createdAt
+          ? item.createdAt.slice(0, 10)
+          : '';
+
+        if (reportDate !== dateFilter) {
+          return false;
+        }
       }
 
       return true;
@@ -101,22 +108,32 @@ const ManageReports = () => {
     });
   };
 
-  const handleConfirmAction = () => {
+
+  const handleConfirmAction = async () => {
     const { type, report, reason } = modalState;
+
     if (!report) return;
 
+    let success = false;
+
     if (type === 'approve') {
-      updateReportStatus(report.id, 'Approved');
+      success = await updateReportStatus(report.id, 'Approved');
     } else if (type === 'reject') {
-      updateReportStatus(report.id, 'Rejected', reason);
+      success = await updateReportStatus(report.id, 'Rejected', reason);
     } else if (type === 'archive') {
-      archiveReport(report.id);
-    } else if (type === 'hide') {
-      updateReportStatus(report.id, 'Withdrawn', 'Hidden by Administrator');
+      success = await archiveReport(report.id);
     }
 
-    setModalState({ isOpen: false, type: null, report: null, reason: '' });
+    if (success) {
+      setModalState({
+        isOpen: false,
+        type: null,
+        report: null,
+        reason: ''
+      });
+    }
   };
+
 
   const columns = [
     {
@@ -125,17 +142,36 @@ const ManageReports = () => {
       width: '120px',
       render: (row) => <span className="fw-semibold text-primary">{row.id}</span>
     },
+
     {
       header: 'Item Image',
       width: '80px',
-      render: (row) => (
-        <img
-          src={row.image}
-          alt={row.itemName}
-          style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover' }}
-        />
-      )
+      render: (row) =>
+        row.image ? (
+          <img
+            src={row.image}
+            alt={row.itemName}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 8,
+              objectFit: 'cover'
+            }}
+          />
+        ) : (
+          <div
+            className="bg-light rounded d-flex align-items-center justify-content-center text-muted"
+            style={{
+              width: 44,
+              height: 44
+            }}
+            title="No image uploaded"
+          >
+            <ImageOff size={20} />
+          </div>
+        )
     },
+
     {
       header: 'Item Name',
       render: (row) => (
@@ -212,7 +248,7 @@ const ManageReports = () => {
               </button>
             </>
           )}
-          {row.status !== 'Archived' && (
+          {['Pending', 'Approved'].includes(row.status) && (
             <button
               className="btn btn-sm btn-outline-dark p-1"
               title="Archive Report"
@@ -353,13 +389,31 @@ const ManageReports = () => {
               ></button>
             </div>
             <div className="modal-body-custom">
+
               <div className="d-flex gap-3 mb-3">
-                <img
-                  src={modalState.report?.image}
-                  alt=""
-                  style={{ width: 110, height: 110, borderRadius: 10, objectFit: 'cover' }}
-                />
+                {modalState.report?.image ? (
+                  <img
+                    src={modalState.report.image}
+                    alt={modalState.report.itemName}
+                    style={{
+                      width: 110,
+                      height: 110,
+                      borderRadius: 10,
+                      objectFit: 'cover'
+                    }}
+                  />
+                ) : (
+                  <div
+                    className="bg-light rounded d-flex align-items-center justify-content-center text-muted"
+                    style={{ width: 110, height: 110 }}
+                    title="No image uploaded"
+                  >
+                    <ImageOff size={36} />
+                  </div>
+                )}
+
                 <div>
+
                   <h5 className="fw-bold mb-1">{modalState.report?.itemName}</h5>
                   <div className="d-flex gap-2 mb-2">
                     <StatusBadge type={modalState.report?.type} />
@@ -378,7 +432,17 @@ const ManageReports = () => {
                 <div className="fw-semibold text-dark mb-1">Item Description:</div>
                 <p className="text-muted mb-0">{modalState.report?.description}</p>
               </div>
-
+              {modalState.report?.status === 'Rejected' &&
+                modalState.report?.rejectionReason && (
+                  <div className="p-3 bg-light rounded-3 mb-3">
+                    <div className="fw-semibold text-danger mb-1">
+                      Rejection Reason:
+                    </div>
+                    <p className="text-muted mb-0">
+                      {modalState.report.rejectionReason}
+                    </p>
+                  </div>
+                )}
               <div className="row g-2" style={{ fontSize: '0.82rem' }}>
                 <div className="col-6">
                   <strong>Reported By:</strong> {modalState.report?.reportedBy}

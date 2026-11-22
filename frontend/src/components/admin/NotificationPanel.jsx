@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Bell, ArrowRight, Info, Check, Clock } from 'lucide-react';
-import { useAdmin } from '../../context/AdminContext';
+import { useAdmin } from '../../context/useAdmin';
 
 const NotificationPanel = () => {
   const { notifications } = useAdmin();

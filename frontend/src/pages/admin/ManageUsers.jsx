@@ -12,7 +12,7 @@ import {
 import DataTable from '../../components/admin/DataTable';
 import StatusBadge from '../../components/admin/StatusBadge';
 import ConfirmationModal from '../../components/admin/ConfirmationModal';
-import { useAdmin } from '../../context/AdminContext';
+import { useAdmin } from '../../context/useAdmin';
 
 const ManageUsers = () => {
   const { users, approveUserAccount, rejectUserAccount } = useAdmin();

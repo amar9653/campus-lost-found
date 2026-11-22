@@ -3,7 +3,7 @@ import {
   Settings,
   Save
 } from 'lucide-react';
-import { useAdmin } from '../../context/AdminContext';
+import { useAdmin } from '../../context/useAdmin';
 
 const AdminSettings = () => {
   const { showToast } = useAdmin();

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Menu, Bell, ChevronDown, User, Settings, LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useAdmin } from '../../context/AdminContext';
+import { useAdmin } from '../../context/useAdmin';
 
 const AdminNavbar = ({ onToggleSidebar, pageTitle, pageDescription }) => {
   const { notifications, markNotificationAsRead } = useAdmin();

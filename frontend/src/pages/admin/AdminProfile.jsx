@@ -9,7 +9,7 @@ import {
   Save,
   Lock
 } from 'lucide-react';
-import { useAdmin } from '../../context/AdminContext';
+import { useAdmin } from '../../context/useAdmin';
 
 const AdminProfile = () => {
   const { profile, updateProfile, showToast } = useAdmin();

@@ -1,24 +1,79 @@
-import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
 
-/**
- * AdminProtectedRoute
- * Prepared for client-side role check when authentication integration is enabled.
- * If token or role verification is required, redirects unauthenticated users to /login.
- * By default allows access in mock mode for previewing.
- */
+import React, { useEffect, useState } from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import axios from "axios";
+
 const AdminProtectedRoute = ({ children }) => {
   const location = useLocation();
+  const [status, setStatus] = useState("checking");
 
-  // Specifically check for valid admin authentication
-  const adminToken = localStorage.getItem('adminToken');
+  useEffect(() => {
+    let active = true;
 
-  if (!adminToken) {
-    return <Navigate to="/admin" state={{ from: location }} replace />;
+    const verifyAdmin = async () => {
+      const token = localStorage.getItem("adminToken");
+
+      if (!token) {
+        if (active) {
+          setStatus("unauthorized");
+        }
+        return;
+      }
+
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/auth/me",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const user = response.data?.data;
+
+        if (!active) return;
+
+        if (response.data?.success && user?.role === "admin") {
+          setStatus("authorized");
+        } else {
+          localStorage.removeItem("adminToken");
+          setStatus("unauthorized");
+        }
+      } catch (error) {
+        if (!active) return;
+
+        localStorage.removeItem("adminToken");
+        setStatus("unauthorized");
+      }
+    };
+
+    verifyAdmin();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (status === "checking") {
+    return (
+      <div className="d-flex justify-content-center align-items-center min-vh-100">
+        <p className="text-muted">Verifying admin access...</p>
+      </div>
+    );
+  }
+
+  if (status === "unauthorized") {
+    return (
+      <Navigate
+        to="/admin"
+        state={{ from: location }}
+        replace
+      />
+    );
   }
 
   return children;
 };
 
 export default AdminProtectedRoute;
-

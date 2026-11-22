@@ -8,7 +8,7 @@ import {
   Tag,
   AlertCircle
 } from 'lucide-react';
-import { useAdmin } from '../../context/AdminContext';
+import { useAdmin } from '../../context/useAdmin';
 import ConfirmationModal from '../../components/admin/ConfirmationModal';
 
 const ManageCategories = () => {

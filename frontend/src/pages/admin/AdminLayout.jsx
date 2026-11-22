@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, useLocation, Navigate } from 'react-router-dom';
 import AdminSidebar from '../../components/admin/AdminSidebar';
 import AdminNavbar from '../../components/admin/AdminNavbar';
-import { useAdmin } from '../../context/AdminContext';
+import { useAdmin } from '../../context/useAdmin';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 // Import Admin Styles

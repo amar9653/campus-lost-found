@@ -9,7 +9,7 @@ import {
   AlertTriangle,
   Info
 } from 'lucide-react';
-import { useAdmin } from '../../context/AdminContext';
+import { useAdmin } from '../../context/useAdmin';
 import { Link } from 'react-router-dom';
 
 const AdminNotifications = () => {

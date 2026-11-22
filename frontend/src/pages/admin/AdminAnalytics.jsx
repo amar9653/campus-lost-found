@@ -20,7 +20,7 @@ import {
   Pie,
   Cell
 } from 'recharts';
-import { useAdmin } from '../../context/AdminContext';
+import { useAdmin } from '../../context/useAdmin';
 import AdminStatCard from '../../components/admin/AdminStatCard';
 import AdminChart from '../../components/admin/AdminChart';
 import {
