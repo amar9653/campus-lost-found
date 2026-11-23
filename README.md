@@ -265,8 +265,16 @@ cd campus-lost-and-found
 
 ### 2. Configure environment variables
 
+Create a `.env` file inside the `backend` folder based on `.env.example`:
+
 ```bash
-cp .env.example server/.env
+cd backend
+cp .env.example .env
+```
+
+For the frontend, copy the example env if one exists:
+
+```bash
 cp .env.example client/.env
 ```
 
@@ -275,48 +283,49 @@ Edit the files with your own values (see [Environment Variables](#environment-va
 ### 3. Install dependencies
 
 ```bash
-cd server && npm install
-cd ../client && npm install
+cd backend
+npm install
+cd ../frontend
+npm install
 ```
 
-### 4. Seed initial data (categories and admin account)
+### 4. Run automated backend tests
 
 ```bash
-cd server
-npm run seed
+cd backend
+npm test
 ```
 
 ### 5. Start the development servers
 
 ```bash
-# Terminal 1 - API
-cd server
+# Terminal 1 - Backend API
+cd backend
 npm run dev
 
 # Terminal 2 - Frontend
-cd client
+cd frontend
 npm run dev
 ```
 
 - Frontend: <http://localhost:5173>
-- API: <http://localhost:5000/api/v1>
+- API Base: <http://localhost:5000/api>
+- Health Check: <http://localhost:5000/api/health>
 
 ## Environment Variables
 
-### Server (`server/.env`)
+### Backend (`backend/.env`)
 
-| Variable | Description | Example |
+Copy `backend/.env.example` to `backend/.env` and replace the following configuration values:
+
+| Variable | Description | What to Replace / Example |
 | --- | --- | --- |
-| `NODE_ENV` | Runtime environment | `development` |
-| `PORT` | API port | `5000` |
-| `MONGO_URI` | MongoDB connection string | `mongodb://localhost:27017/lostfound` |
-| `JWT_SECRET` | Secret for signing tokens | `change-me` |
-| `JWT_EXPIRES_IN` | Token lifetime | `1d` |
-| `CLIENT_URL` | Allowed CORS origin | `http://localhost:5173` |
-| `UPLOAD_DIR` | Local upload directory | `uploads` |
-| `MAX_IMAGE_SIZE_MB` | Max image size | `5` |
-| `SMTP_HOST` / `SMTP_USER` / `SMTP_PASS` | Email settings for password reset | – |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Seed admin credentials | – |
+| `PORT` | Server listening port | `5000` (or your preferred port) |
+| `NODE_ENV` | Application environment | `development` (set to `production` in live environments) |
+| `MONGO_URI` | MongoDB connection string | Replace with local MongoDB `mongodb://127.0.0.1:27017/campus_lost_found` or MongoDB Atlas URI `mongodb+srv://<user>:<password>@cluster.mongodb.net/dbname` |
+| `JWT_SECRET` | Secret key used for signing & verifying JWTs | **Replace with a strong, unpredictable random secret string** (e.g. generated via `openssl rand -hex 32`) |
+| `JWT_EXPIRES_IN` | JWT token lifetime | `7d` (e.g., `1d`, `7d`, `24h`) |
+| `FRONTEND_URL` | Allowed CORS origin | `http://localhost:5173` (replace with your frontend app URL) |
 
 ### Client (`client/.env`)
 
@@ -324,7 +333,56 @@ npm run dev
 | --- | --- | --- |
 | `VITE_API_URL` | Backend API base URL | `http://localhost:5000/api/v1` |
 
-> **Never commit real secrets.** `.env` files are git-ignored; only `.env.example` is tracked.
+> **Never commit real secrets.** Keep `.env` git-ignored; only share `.env.example`.
+
+## Recent Updates & Completed Modules
+
+### 1. MongoDB Database Models (`backend/models/`)
+- **`User` Model (`User.js`)**:
+  - Fields: `name`, `email` (unique, lowercase), `password` (hashed with bcrypt), `role` (`user` / `admin`), `phone`, timestamps.
+  - Automatic `pre('save')` password hashing hook and `matchPassword` instance method.
+- **`ItemReport` Model (`ItemReport.js`)**:
+  - Fields: `type` (`lost` / `found`), `itemName`, `category`, `description`, `location`, `eventDate`, `contact`, `status` (`pending`, `approved`, `matched`, `returned`, `withdrawn`, etc.), `isActive`, `images`, and `user` reference (`ObjectId` -> `User`).
+  - Text search indexes on `itemName` & `description`, and compound indexes on `type`, `status`, and `isActive`.
+
+### 2. JWT Authentication & Role Middleware (`backend/middleware/` & `backend/utils/`)
+- **Token Generation & Verification (`backend/utils/jwt.js`)**: Signs and verifies JWT tokens with custom expiration.
+- **Auth Middleware (`backend/middleware/authMiddleware.js`)**:
+  - `protect`: Extracts `Bearer <token>` from the `Authorization` header, decodes user payload, and attaches `req.user`. Returns `401 Unauthorized` for missing/invalid tokens.
+  - `authorize`: Guards routes based on role permissions (`admin` / `user`).
+- **Auth Routes (`backend/routes/authRoutes.js`)**:
+  - `POST /api/auth/register`: Creates new user accounts with hashed passwords and returns a JWT token.
+  - `POST /api/auth/login`: Authenticates user credentials and issues a JWT token.
+  - `GET /api/auth/me`: Fetches authenticated user profile (`protect` required).
+
+### 3. Ownership Verification (`backend/middleware/ownershipMiddleware.js`)
+- **`verifyReportOwnership` Middleware**:
+  - Validates MongoDB `ObjectId` format.
+  - Verifies that the report exists.
+  - Verifies that `req.user._id` matches `report.user` (or the user possesses `admin` privileges). Returns `403 Forbidden` if unauthorized.
+  - Attaches the verified report object to `req.report`.
+
+### 4. Report Operations & File Uploads
+- `POST /api/reports`: Protected; automatically links reports to the authenticated user.
+- `GET /api/reports/user/mine`: Protected; retrieves reports created by the current user.
+- `PATCH /api/reports/:id`: Protected + ownership verified; allows only owners or admins to modify report details.
+- `PATCH /api/reports/:id/withdraw`: Protected + ownership verified; deactivates and withdraws the report.
+- `POST /api/reports/:id/images`: Protected + ownership verified + magic-byte image signature validation.
+
+### 5. Automated Workflow Tests (`backend/tests/testWorkflow.js`)
+A comprehensive test suite verifying the end-to-end integration:
+- User registration and login token issuance.
+- Token-protected route authorization (`401` rejection on missing token).
+- Report creation linked to user.
+- Report modification and withdrawal ownership checks (`403` rejection when non-owners attempt updates/withdrawals).
+- Successful owner modifications and withdrawals (`200 OK`).
+- Verification that withdrawn reports are excluded from active search listings.
+
+Run tests using:
+```bash
+cd backend
+npm test
+```
 
 ## Running with Docker
 
