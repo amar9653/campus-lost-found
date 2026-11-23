@@ -1,0 +1,259 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --bg-page: #F0F5FA;
+  --sidebar-navy: #0B1E38;
+  --sidebar-active-pill: #1B5CE2;
+  --sidebar-text: #8E9BAE;
+  --sidebar-text-active: #FFFFFF;
+  --sidebar-width: 250px;
+  --sidebar-collapsed-width: 76px;
+  
+  --card-bg: #FFFFFF;
+  --card-border: #E8EFF7;
+  --card-radius: 16px;
+  --card-shadow: 0 4px 20px -2px rgba(18, 38, 63, 0.05);
+
+  --text-dark: #111E2E;
+  --text-muted: #7E8B9B;
+  
+  --color-blue: #1B5CE2;
+  --color-teal: #10B981;
+  --color-green: #10B981;
+  --color-amber: #F59E0B;
+  --color-purple: #8B5CF6;
+  --color-rose: #EF4444;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  background-color: var(--bg-page);
+  color: var(--text-dark);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Master Layout */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--bg-page);
+}
+
+.main-content-layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: var(--sidebar-width);
+  transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 0;
+}
+
+.main-content-layout.collapsed {
+  margin-left: var(--sidebar-collapsed-width);
+}
+
+.dashboard-viewport {
+  padding: 24px 32px 48px;
+  max-width: 1600px;
+}
+
+/* Rounded Cards */
+.custom-card {
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid #EBF1F8;
+  box-shadow: 0 4px 16px 0 rgba(16, 36, 68, 0.04);
+  padding: 22px 24px;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.custom-card:hover {
+  box-shadow: 0 8px 24px 0 rgba(16, 36, 68, 0.08);
+}
+
+.card-header-clean {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.card-title-clean {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111E2E;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.view-all-link {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #1B5CE2;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: opacity 0.15s ease;
+}
+
+.view-all-link:hover {
+  opacity: 0.8;
+}
+
+/* Clean Clean Table Styles matching the reference screenshot */
+.clean-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.88rem;
+}
+
+.clean-table th {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #8A98A8;
+  padding: 10px 14px;
+  border-bottom: 1px solid #F0F4F8;
+  white-space: nowrap;
+}
+
+.clean-table td {
+  padding: 14px;
+  vertical-align: middle;
+  border-bottom: 1px solid #F5F8FB;
+  color: #1D2D3F;
+}
+
+.clean-table tr:last-child td {
+  border-bottom: none;
+}
+
+.clean-table tr:hover td {
+  background-color: #F9FBFE;
+}
+
+/* Badges matching reference */
+.badge-clean {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.badge-clean-pending {
+  background-color: #FFF3DC;
+  color: #DD8007;
+}
+
+.badge-clean-review {
+  background-color: #E2EDFF;
+  color: #2563EB;
+}
+
+.badge-clean-approved {
+  background-color: #DCFCE7;
+  color: #16A34A;
+}
+
+.badge-clean-rejected {
+  background-color: #FEE2E2;
+  color: #DC2626;
+}
+
+.badge-clean-completed {
+  background-color: #F3E8FF;
+  color: #9333EA;
+}
+
+.badge-clean-found {
+  background-color: #DCFCE7;
+  color: #16A34A;
+}
+
+.badge-clean-lost {
+  background-color: #FEE2E2;
+  color: #DC2626;
+}
+
+/* Notification Item in clean card */
+.notif-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 0;
+  border-bottom: 1px solid #F5F8FB;
+}
+
+.notif-row:last-child {
+  border-bottom: none;
+}
+
+.notif-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.notif-icon-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+}
+
+.notif-msg {
+  font-size: 0.86rem;
+  color: #203042;
+  font-weight: 500;
+}
+
+.notif-time {
+  font-size: 0.76rem;
+  color: #8C9CAE;
+  white-space: nowrap;
+}
+
+/* Modals & Backdrop */
+.modal-backdrop-custom {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(11, 30, 56, 0.45);
+  backdrop-filter: blur(3px);
+  z-index: 1060;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal-content-custom {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(11, 30, 56, 0.15);
+  width: 100%;
+  max-width: 520px;
+  overflow: hidden;
+  animation: scaleModal 0.2s ease-out;
+}
+
+@keyframes scaleModal {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
