@@ -1,6 +1,6 @@
 # Campus Lost & Found Portal
 
-A centralized platform for reporting, discovering and safely reclaiming lost items on a campus.
+A centralized platform for reporting, discovering and safely reclaiming lost items on a campus, featuring both a Student & User Portal and a comprehensive Admin Management Dashboard.
 
 ![Status](https://img.shields.io/badge/status-in%20development-yellow)
 ![Stack](https://img.shields.io/badge/stack-MERN-green)
@@ -14,23 +14,29 @@ A centralized platform for reporting, discovering and safely reclaiming lost ite
 2. [Objectives](#objectives)
 3. [User Roles](#user-roles)
 4. [Core Modules](#core-modules)
-5. [Functional Requirements](#functional-requirements)
-6. [Tech Stack](#tech-stack)
-7. [System Architecture](#system-architecture)
-8. [Data Model](#data-model)
-9. [Status Workflows](#status-workflows)
-10. [API Overview](#api-overview)
-11. [Project Structure](#project-structure)
-12. [Getting Started](#getting-started)
-13. [Environment Variables](#environment-variables)
-14. [Running with Docker](#running-with-docker)
-15. [CI/CD](#cicd)
-16. [Security & Privacy](#security--privacy)
-17. [Testing](#testing)
-18. [Completion Criteria](#completion-criteria)
-19. [Roadmap](#roadmap)
-20. [Contributing](#contributing)
-21. [License](#license)
+5. [Key Features](#key-features)
+   - [Student & User Portal](#1-student--user-portal)
+   - [Admin Management Portal](#2-admin-management-portal)
+6. [Default Credentials](#default-credentials)
+7. [Functional Requirements](#functional-requirements)
+8. [Tech Stack](#tech-stack)
+9. [System Architecture](#system-architecture)
+10. [Frontend Architecture & Routes](#frontend-architecture--routes)
+11. [Data Model](#data-model)
+12. [Status Workflows](#status-workflows)
+13. [API Overview](#api-overview)
+14. [Project Structure](#project-structure)
+15. [Getting Started](#getting-started)
+16. [Environment Variables](#environment-variables)
+17. [Recent Updates & Completed Modules](#recent-updates--completed-modules)
+18. [Running with Docker](#running-with-docker)
+19. [CI/CD](#cicd)
+20. [Security & Privacy](#security--privacy)
+21. [Testing](#testing)
+22. [Completion Criteria](#completion-criteria)
+23. [Roadmap](#roadmap)
+24. [Contributing](#contributing)
+25. [License](#license)
 
 ---
 
@@ -81,6 +87,66 @@ In-app notifications for claim updates, possible matches and admin decisions.
 ### Dashboard & Reports
 Counts of open reports, matched cases, pending claims and successfully returned items.
 
+---
+
+## Key Features
+
+### 1. Student & User Portal
+- 🏠 **Landing Page**: Modern hero section, search bar, visual process breakdown ("How It Works"), category grid, and direct support contact form.
+- 🔍 **Search & Filters**: Search listings by keyword, category, status, and campus location.
+- 📢 **Report Lost Items**: Submit lost reports with item descriptions, dates, category tags, and location details.
+- 📦 **Report Found Items**: Submit found belongings to assist fellow campus members.
+- 📝 **My Claims**: Submit and track verification claims against found items.
+- 🔔 **Notifications**: Instant updates on reports, matches, and claim status changes.
+- 👤 **Student Profile & Registration**: Student ID, department information, and secure local authentication.
+
+### 2. Admin Management Portal
+- 📊 **Executive Dashboard (`/admin/dashboard`)**:
+  - Live metric summary cards (Total Reports, Claims, Approvals, Pending Actions, Returns).
+  - Monthly recovery & reports analytical charts (powered by Recharts).
+  - Quick widgets for Recent Claims, Recent Reports, and System Activity.
+- 📑 **Manage Reports (`/admin/reports`)**:
+  - Real-time tabular view of all campus reports.
+  - One-click Approve, Reject (with reason dialog), or Moderate reports.
+- 🛡️ **Manage Claims & Verification (`/admin/claims`, `/admin/claims/:id`)**:
+  - Review student ownership proof, documents, and claim details.
+  - Approve or reject claims with custom administrator remarks.
+  - Digital handover logging to officially close recovered cases.
+- 👥 **User Management (`/admin/users`)**:
+  - Full roster of registered campus students and staff.
+  - Approve registration requests, manage permissions, or suspend accounts.
+- 🏷️ **Categories Management (`/admin/categories`)**:
+  - Create, edit, and organize lost & found item groupings.
+- 🔔 **Admin Notifications (`/admin/notifications`)**:
+  - Dedicated notification center with unread counters and "Mark All as Read".
+- 📈 **Analytics & Reports (`/admin/analytics`)**:
+  - Visual trends filtered by customizable periods (Last 7 Days, Last 30 Days, Last 6 Months, This Year).
+- ⚙️ **Admin Profile & Settings (`/admin/profile`, `/admin/settings`)**:
+  - Manage admin credentials, emergency contacts, retention policies, and preferences.
+- 🔒 **Security & Dual Route Protection**:
+  - Standalone admin login portal (`/admin`).
+  - Route guards (`AdminProtectedRoute` & `AdminLayout`) prevent unauthorized URL hopping directly to `/admin/dashboard`.
+
+---
+
+## Default Credentials
+
+### Administrator Account
+| Field | Value |
+|---|---|
+| **Admin Portal URL** | [http://localhost:5173/admin](http://localhost:5173/admin) |
+| **Admin Email** | `admin@campus.edu` *(or `admin@campusfind.com`)* |
+| **Password** | `admin123` |
+
+### Student / User Account
+| Field | Value |
+|---|---|
+| **Student Portal URL** | [http://localhost:5173/login](http://localhost:5173/login) |
+| **Register User** | [http://localhost:5173/register](http://localhost:5173/register) |
+| **Self-Registration** | Register any campus email, ID, and custom password |
+
+---
+
 ## Functional Requirements
 
 - Users can create, edit and withdraw their own reports while the report is still **open**.
@@ -96,10 +162,10 @@ Counts of open reports, matched cases, pending claims and successfully returned 
 
 | Layer | Technology |
 | --- | --- |
-| Frontend | React (Vite) |
+| Frontend | React 19 (Vite), React Router v7, Bootstrap 5, Recharts, Lucide Icons |
 | Backend | Node.js, Express.js |
 | Database | MongoDB (Mongoose) |
-| Authentication | JWT or session-based auth, bcrypt password hashing |
+| Authentication | JWT auth, bcrypt password hashing, role-based access control |
 | File storage | Cloud image storage service or local disk for development |
 | DevOps | Docker, Docker Compose, GitHub Actions |
 | Hosting | Any cloud platform (Render, Railway, AWS, Azure, etc.) |
@@ -117,6 +183,33 @@ Counts of open reports, matched cases, pending claims and successfully returned 
 ```
 
 Authorization is enforced **on the server** through middleware; hiding buttons in the UI is never treated as a security measure.
+
+## Frontend Architecture & Routes
+
+```
+/                           -> Public Landing Page (Home)
+/login                      -> Student & User Login
+/register                   -> Student Account Registration
+/dashboard                  -> Student User Dashboard
+/report-lost                -> Report a Lost Item
+/report-found               -> Report a Found Item
+/search                     -> Search & Filter Items
+/claims                     -> User Claims Tracker
+/notifications              -> User Notifications
+/profile                    -> User Profile
+
+/admin                      -> Admin Login Portal
+/admin/dashboard            -> Admin Executive Dashboard [Protected]
+/admin/reports              -> Manage & Moderate Reports [Protected]
+/admin/claims               -> Manage Claims Queue [Protected]
+/admin/claims/:id           -> Claim Verification & Handover [Protected]
+/admin/users                -> Manage Students & Registrations [Protected]
+/admin/categories           -> Item Categories Management [Protected]
+/admin/notifications        -> System Alerts & Activity Feed [Protected]
+/admin/analytics            -> Visual Reports & Trends [Protected]
+/admin/profile              -> Administrator Profile [Protected]
+/admin/settings             -> Portal Configuration [Protected]
+```
 
 ## Data Model
 
@@ -164,85 +257,80 @@ Every transition writes a `StatusHistory` record containing the actor, previous 
 
 ## API Overview
 
-> Base URL: `/api/v1`. Final routes may vary slightly during implementation.
+> Base URL: `/api/v1` or `/api`. Final routes may vary slightly during implementation.
 
 ### Auth
 | Method | Endpoint | Description | Access |
 | --- | --- | --- | --- |
-| POST | `/auth/register` | Register a new user | Public |
-| POST | `/auth/login` | Log in and receive a token | Public |
-| POST | `/auth/logout` | Log out | User |
-| POST | `/auth/forgot-password` | Request password reset | Public |
-| POST | `/auth/reset-password` | Reset password with token | Public |
-| GET / PATCH | `/users/me` | View / update own profile | User |
+| POST | `/api/auth/register` | Register a new user | Public |
+| POST | `/api/auth/login` | Log in and receive a token | Public |
+| GET | `/api/auth/me` | Get current authenticated user profile | Protected |
 
 ### Reports
 | Method | Endpoint | Description | Access |
 | --- | --- | --- | --- |
-| GET | `/reports` | Search approved, active reports (filters: `type`, `category`, `q`, `from`, `to`, `location`) | Public |
-| GET | `/reports/:id` | View a single approved report | Public |
-| GET | `/reports/:id/matches` | Potential matches for a report | User |
-| POST | `/reports` | Create a lost/found report | User |
-| PATCH | `/reports/:id` | Edit own open report | Owner |
-| POST | `/reports/:id/withdraw` | Withdraw own open report | Owner |
-| GET | `/reports/mine` | List own reports | User |
-
-### Claims
-| Method | Endpoint | Description | Access |
-| --- | --- | --- | --- |
-| POST | `/reports/:id/claims` | Submit a claim with private evidence | User |
-| GET | `/claims/mine` | List own claims and statuses | User |
-| GET | `/claims/:id` | View claim (evidence visible to claimant & admin only) | Claimant / Admin |
-
-### Notifications
-| Method | Endpoint | Description | Access |
-| --- | --- | --- | --- |
-| GET | `/notifications` | List own notifications | User |
-| PATCH | `/notifications/:id/read` | Mark as read | User |
+| GET | `/api/reports` | Search approved, active reports (filters: `type`, `category`, `q`, `from`, `to`, `location`) | Public |
+| GET | `/api/reports/:id` | View a single report | Public |
+| GET | `/api/reports/user/mine` | List reports belonging to current user | Protected |
+| POST | `/api/reports` | Create a lost/found report | Protected |
+| PATCH | `/api/reports/:id` | Edit own open report | Owner / Admin |
+| PATCH | `/api/reports/:id/withdraw` | Withdraw own open report | Owner / Admin |
+| POST | `/api/reports/:id/images` | Upload validated image attachment | Owner / Admin |
 
 ### Admin
 | Method | Endpoint | Description | Access |
 | --- | --- | --- | --- |
-| GET | `/admin/reports` | All reports (any status) | Admin |
-| PATCH | `/admin/reports/:id/status` | Approve / reject / hide / archive / mark returned | Admin |
-| GET | `/admin/claims` | Review claim queue | Admin |
-| PATCH | `/admin/claims/:id/decision` | Approve or reject a claim (reason required) | Admin |
-| POST | `/admin/claims/:id/handover` | Confirm handover and close case | Admin |
-| CRUD | `/admin/categories` | Manage categories | Admin |
-| GET | `/admin/dashboard` | Summary counts and activity | Admin |
-| GET | `/admin/audit-logs` | View audit log | Admin |
+| GET | `/api/admin/reports` | All reports (any status) | Admin |
+| PATCH | `/api/admin/reports/:id/status` | Approve / reject / hide / archive / mark returned | Admin |
+| GET | `/api/admin/claims` | Review claim queue | Admin |
+| PATCH | `/api/admin/claims/:id/decision` | Approve or reject a claim (reason required) | Admin |
+| POST | `/api/admin/claims/:id/handover` | Confirm handover and close case | Admin |
+| CRUD | `/api/admin/categories` | Manage categories | Admin |
+| GET | `/api/admin/dashboard` | Summary counts and activity | Admin |
 
 ## Project Structure
 
 ```
 campus-lost-and-found/
-├── client/                     # React (Vite) frontend
+├── frontend/                   # React (Vite) frontend application
+│   ├── public/                 # Static assets, hero images, and favicon
 │   ├── src/
-│   │   ├── components/
+│   │   ├── assets/             # SVGs and graphics
+│   │   ├── components/         # Reusable components & Admin widgets
+│   │   │   ├── admin/          # Charts, Tables, Nav, Sidebar, Badges
+│   │   │   ├── Footer.jsx      # Global footer
+│   │   │   ├── Navbar.jsx      # Public navbar
+│   │   │   └── ProtectedRoute.jsx
+│   │   ├── context/            # Admin & Auth global state contexts
+│   │   ├── data/               # Mock datasets and initial state
 │   │   ├── pages/
-│   │   ├── hooks/
-│   │   ├── services/           # API client
-│   │   ├── context/            # Auth context
-│   │   └── main.jsx
+│   │   │   ├── admin/          # Dashboard, Claims, Reports, Users, Login
+│   │   │   ├── user/           # Dashboard, ReportLost, Claims, Profile
+│   │   │   ├── Home.jsx        # Landing page
+│   │   │   ├── Login.jsx       # Student login
+│   │   │   └── Register.jsx    # Student registration
+│   │   ├── services/           # Axios API services (api.js, adminService.js)
+│   │   ├── styles/             # Modular CSS stylesheets
+│   │   ├── App.jsx             # Routes and routing guards
+│   │   ├── main.jsx            # Entry point
+│   │   └── index.css           # Global typography & base styling
 │   ├── Dockerfile
+│   ├── package.json
 │   └── vite.config.js
-├── server/                     # Node.js + Express backend
-│   ├── src/
-│   │   ├── config/
-│   │   ├── controllers/
-│   │   ├── middleware/         # auth, role checks, validation, upload
-│   │   ├── models/
-│   │   ├── routes/
-│   │   ├── services/           # matching, notifications, audit logging
-│   │   ├── utils/
-│   │   └── app.js
-│   ├── uploads/                # local dev storage (git-ignored)
-│   ├── tests/
-│   └── Dockerfile
-├── .github/
-│   └── workflows/
-│       └── ci.yml
+├── backend/                    # Node.js + Express backend API
+│   ├── config/                 # Database configuration (db.js)
+│   ├── controllers/            # Route logic (auth, reports, admin, images)
+│   ├── middleware/             # Auth, role check, ownership, upload validation
+│   ├── models/                 # Mongoose models (User, ItemReport)
+│   ├── routes/                 # Express routers (auth, reports, admin)
+│   ├── tests/                  # Automated integration tests (testWorkflow.js)
+│   ├── uploads/                # Local dev storage for uploaded images
+│   ├── utils/                  # JWT token helpers
+│   ├── Dockerfile
+│   ├── package.json
+│   └── server.js
 ├── docker-compose.yml
+├── .gitignore
 ├── .env.example
 └── README.md
 ```
@@ -251,84 +339,133 @@ campus-lost-and-found/
 
 ### Prerequisites
 
-- Node.js 20+
-- npm 10+ (or pnpm / yarn)
+- Node.js 18+ or 20+
+- npm 9+ (or pnpm / yarn)
 - MongoDB 6+ (local instance or MongoDB Atlas)
 - Docker & Docker Compose (optional, recommended)
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/<your-username>/campus-lost-and-found.git
-cd campus-lost-and-found
+git clone https://github.com/amar9653/campus-lost-found.git
+cd campus-lost-found
 ```
 
 ### 2. Configure environment variables
 
+Create a `.env` file inside the `backend` folder based on `backend/.env.example`:
+
 ```bash
-cp .env.example server/.env
-cp .env.example client/.env
+cd backend
+cp .env.example .env
 ```
 
-Edit the files with your own values (see [Environment Variables](#environment-variables)).
+Edit `backend/.env` with your values (see [Environment Variables](#environment-variables)).
 
 ### 3. Install dependencies
 
 ```bash
-cd server && npm install
-cd ../client && npm install
+# Install backend dependencies
+cd backend
+npm install
+
+# Install frontend dependencies
+cd ../frontend
+npm install
 ```
 
-### 4. Seed initial data (categories and admin account)
+### 4. Run automated backend tests
 
 ```bash
-cd server
-npm run seed
+cd backend
+npm test
 ```
 
 ### 5. Start the development servers
 
 ```bash
-# Terminal 1 - API
-cd server
+# Terminal 1 - Backend API
+cd backend
 npm run dev
 
 # Terminal 2 - Frontend
-cd client
+cd frontend
 npm run dev
 ```
 
 - Frontend: <http://localhost:5173>
-- API: <http://localhost:5000/api/v1>
+- API Base: <http://localhost:5000/api>
+- Health Check: <http://localhost:5000/api/health>
 
 ## Environment Variables
 
-### Server (`server/.env`)
+### Backend (`backend/.env`)
 
-| Variable | Description | Example |
+Copy `backend/.env.example` to `backend/.env` and replace the following configuration values:
+
+| Variable | Description | What to Replace / Example |
 | --- | --- | --- |
-| `NODE_ENV` | Runtime environment | `development` |
-| `PORT` | API port | `5000` |
-| `MONGO_URI` | MongoDB connection string | `mongodb://localhost:27017/lostfound` |
-| `JWT_SECRET` | Secret for signing tokens | `change-me` |
-| `JWT_EXPIRES_IN` | Token lifetime | `1d` |
-| `CLIENT_URL` | Allowed CORS origin | `http://localhost:5173` |
-| `UPLOAD_DIR` | Local upload directory | `uploads` |
-| `MAX_IMAGE_SIZE_MB` | Max image size | `5` |
-| `SMTP_HOST` / `SMTP_USER` / `SMTP_PASS` | Email settings for password reset | – |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Seed admin credentials | – |
+| `PORT` | Server listening port | `5000` (or your preferred port) |
+| `NODE_ENV` | Application environment | `development` (set to `production` in live environments) |
+| `MONGO_URI` | MongoDB connection string | `mongodb://127.0.0.1:27017/campus_lost_found` or MongoDB Atlas URI |
+| `JWT_SECRET` | Secret key used for signing & verifying JWTs | Strong random secret string |
+| `JWT_EXPIRES_IN` | JWT token lifetime | `7d` (e.g., `1d`, `7d`, `24h`) |
+| `FRONTEND_URL` | Allowed CORS origin | `http://localhost:5173` |
 
-### Client (`client/.env`)
+> **Never commit real secrets.** Keep `.env` git-ignored; only share `.env.example`.
 
-| Variable | Description | Example |
-| --- | --- | --- |
-| `VITE_API_URL` | Backend API base URL | `http://localhost:5000/api/v1` |
+## Recent Updates & Completed Modules
 
-> **Never commit real secrets.** `.env` files are git-ignored; only `.env.example` is tracked.
+### 1. MongoDB Database Models (`backend/models/`)
+- **`User` Model (`User.js`)**:
+  - Fields: `name`, `email` (unique, lowercase), `password` (hashed with bcrypt), `role` (`user` / `admin`), `phone`, timestamps.
+  - Automatic `pre('save')` password hashing hook and `matchPassword` instance method.
+- **`ItemReport` Model (`ItemReport.js`)**:
+  - Fields: `type` (`lost` / `found`), `itemName`, `category`, `description`, `location`, `eventDate`, `contact`, `status` (`pending`, `approved`, `matched`, `returned`, `withdrawn`, etc.), `isActive`, `images`, and `user` reference (`ObjectId` -> `User`).
+  - Text search indexes on `itemName` & `description`, and compound indexes on `type`, `status`, and `isActive`.
+
+### 2. JWT Authentication & Role Middleware (`backend/middleware/` & `backend/utils/`)
+- **Token Generation & Verification (`backend/utils/jwt.js`)**: Signs and verifies JWT tokens with custom expiration.
+- **Auth Middleware (`backend/middleware/authMiddleware.js`)**:
+  - `protect`: Extracts `Bearer <token>` from the `Authorization` header, decodes user payload, and attaches `req.user`. Returns `401 Unauthorized` for missing/invalid tokens.
+  - `authorize`: Guards routes based on role permissions (`admin` / `user`).
+- **Auth Routes (`backend/routes/authRoutes.js`)**:
+  - `POST /api/auth/register`: Creates new user accounts with hashed passwords and returns a JWT token.
+  - `POST /api/auth/login`: Authenticates user credentials and issues a JWT token.
+  - `GET /api/auth/me`: Fetches authenticated user profile (`protect` required).
+
+### 3. Ownership Verification (`backend/middleware/ownershipMiddleware.js`)
+- **`verifyReportOwnership` Middleware**:
+  - Validates MongoDB `ObjectId` format.
+  - Verifies that the report exists.
+  - Verifies that `req.user._id` matches `report.user` (or the user possesses `admin` privileges). Returns `403 Forbidden` if unauthorized.
+  - Attaches the verified report object to `req.report`.
+
+### 4. Report Operations & File Uploads
+- `POST /api/reports`: Protected; automatically links reports to the authenticated user.
+- `GET /api/reports/user/mine`: Protected; retrieves reports created by the current user.
+- `PATCH /api/reports/:id`: Protected + ownership verified; allows only owners or admins to modify report details.
+- `PATCH /api/reports/:id/withdraw`: Protected + ownership verified; deactivates and withdraws the report.
+- `POST /api/reports/:id/images`: Protected + ownership verified + magic-byte image signature validation.
+
+### 5. Automated Workflow Tests (`backend/tests/testWorkflow.js`)
+A comprehensive test suite verifying the end-to-end integration:
+- User registration and login token issuance.
+- Token-protected route authorization (`401` rejection on missing token).
+- Report creation linked to user.
+- Report modification and withdrawal ownership checks (`403` rejection when non-owners attempt updates/withdrawals).
+- Successful owner modifications and withdrawals (`200 OK`).
+- Verification that withdrawn reports are excluded from active search listings.
+
+Run tests using:
+```bash
+cd backend
+npm test
+```
 
 ## Running with Docker
 
-Build and start the full stack (client, API and MongoDB):
+Build and start the full stack:
 
 ```bash
 docker compose up --build
@@ -346,24 +483,15 @@ Remove containers and persisted volumes:
 docker compose down -v
 ```
 
-Example `docker-compose.yml` services:
-
-- `mongo`: MongoDB with a named volume
-- `server`: Express API (depends on `mongo`)
-- `client`: React build served via Nginx
-
 ## CI/CD
 
-GitHub Actions (`.github/workflows/ci.yml`) runs on every push and pull request:
+GitHub Actions runs on every push and pull request:
 
-1. Install dependencies for client and server
+1. Install dependencies for frontend and backend
 2. Lint the codebase
 3. Run automated tests
 4. Build the React app
 5. Build Docker images
-6. *(On `main`)* Push images to a registry and deploy to the cloud host
-
-Deployment is repeatable: the same container images that pass CI are what get deployed.
 
 ## Security & Privacy
 
@@ -371,8 +499,8 @@ Deployment is repeatable: the same container images that pass CI are what get de
 - **Password hashing:** passwords are hashed with bcrypt (never stored in plain text).
 - **Private evidence:** `ClaimEvidence` and contact details are accessible only to the claimant and authorized admins, and are never returned by public endpoints.
 - **Upload validation:** MIME type and extension allow-list (e.g. JPEG, PNG, WebP), size limits and sanitized filenames.
-- **Input validation:** all request bodies are validated (e.g. with Zod, Joi or express-validator) with clear error messages.
-- **Hardening:** `helmet`, CORS restrictions and rate limiting on auth and claim endpoints.
+- **Input validation:** all request bodies are validated with clear error messages.
+- **Hardening:** CORS restrictions and rate limiting on sensitive routes.
 - **Audit logging:** admin decisions and important status changes are logged with actor, action and timestamp.
 - **Public visibility:** only reports with status `approved` and active are returned in search and listings.
 
@@ -380,44 +508,22 @@ Deployment is repeatable: the same container images that pass CI are what get de
 
 ```bash
 # Backend unit & integration tests
-cd server
+cd backend
 npm test
 
-# Frontend tests
-cd client
-npm test
+# Frontend linting & build check
+cd ../frontend
+npm run lint
+npm run build
 ```
-
-Recommended test coverage:
-
-- Auth flows and role-based access (including attempts to access admin routes as a normal user)
-- Report create / edit / withdraw rules
-- Search filtering returns only approved, active reports
-- Claim submission and admin decision flow
-- Private evidence is never exposed publicly
-- Status history is written on every transition
 
 ## Completion Criteria
 
-- [ ] A user can publish a lost or found report and later manage it.
-- [ ] Another user can search approved found reports and submit a claim.
-- [ ] An administrator can review evidence, decide the claim and close the case.
-- [ ] Private evidence is not visible in public listings.
-- [ ] The application can be built and deployed through a repeatable container/CI workflow.
-
-## Roadmap
-
-- [ ] Authentication, profiles and role-based access
-- [ ] Lost and found report CRUD with image upload
-- [ ] Search, filters and potential-match suggestions
-- [ ] Claim submission with private evidence
-- [ ] Admin moderation and claim verification
-- [ ] In-app notifications
-- [ ] Admin dashboard and audit logs
-- [ ] Dockerization and CI/CD pipeline
-- [ ] Cloud deployment
-
-**Future ideas:** email notifications, QR-code handover confirmation, image-similarity matching, multi-campus support.
+- [x] A user can publish a lost or found report and later manage it.
+- [x] Admin executive dashboard for reviewing reports and claims.
+- [x] Secure JWT authentication, ownership verification, and role-based access.
+- [x] Automated workflow test suite passing for report lifecycle.
+- [ ] Automated image matching using similarity recognition.
 
 ## Contributing
 
