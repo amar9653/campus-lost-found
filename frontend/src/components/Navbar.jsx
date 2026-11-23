@@ -1,9 +1,10 @@
-
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { UserRound } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { UserRound, Search } from 'lucide-react';
 
 function Navbar() {
+  const location = useLocation();
+
   return (
     <nav className="navbar navbar-expand-lg bg-white shadow-sm py-3">
       <div className="container">
@@ -34,6 +35,16 @@ function Navbar() {
             <li className="nav-item">
               <Link className="nav-link" to="/">
                 Home
+              </Link>
+            </li>
+
+            <li className="nav-item">
+              <Link
+                className={`nav-link ${location.pathname === '/search' ? 'active' : ''}`}
+                to="/search"
+              >
+                <Search size={16} className="me-1" />
+                Browse Found Items
               </Link>
             </li>
 

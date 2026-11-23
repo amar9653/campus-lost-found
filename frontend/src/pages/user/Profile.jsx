@@ -23,9 +23,9 @@ function Profile() {
     email: loggedInUser?.email || '',
     phone: loggedInUser?.phone || '',
     studentId: loggedInUser?.studentId || '',
-    department: loggedInUser?.department || 'Computer Engineering',
-    role: 'Student',
-    college: 'Sanjivani College Of Engineering, Kopargaon'
+    department: loggedInUser?.department || '',
+    role: loggedInUser?.role || 'Student',
+    college: loggedInUser?.college || 'College not provided'
   };
 
   const [profile, setProfile] = useState(initialProfile);
