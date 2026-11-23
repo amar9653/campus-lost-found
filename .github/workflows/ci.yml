@@ -35,11 +35,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@1.11.0
-        with:
-          mongodb-version: "7.0"
-          mongodb-port: 27017
+      - name: Start MongoDB via Docker
+        run: |
+          docker run -d --name mongodb -p 27017:27017 mongo:latest
+          sleep 5
 
       - name: Run tests
         run: npm test
