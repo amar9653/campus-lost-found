@@ -2,46 +2,74 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, staging]
+    branches: [main]
   pull_request:
-    branches: [main, staging]
+    branches: [main]
 
 jobs:
   # ─────────────────────────────────────────────
-  # Backend: Install, Lint, Test
+  # Job 1: Lint
   # ─────────────────────────────────────────────
-  backend:
-    name: Backend CI
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
-
-    strategy:
-      matrix:
-        node-version: [18, 20]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Lint frontend
+        run: npm run lint
+        working-directory: frontend
+
+  # ─────────────────────────────────────────────
+  # Job 2: Test
+  # ─────────────────────────────────────────────
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
           cache: npm
           cache-dependency-path: backend/package-lock.json
 
-      - name: Install dependencies
+      - name: Install backend dependencies
         run: npm ci
+        working-directory: backend
 
       - name: Start MongoDB via Docker
         run: |
           docker run -d --name mongodb -p 27017:27017 mongo:latest
           sleep 5
 
-      - name: Run tests
+      - name: Run backend tests
         run: npm test
+        working-directory: backend
         env:
           MONGO_URI: mongodb://127.0.0.1:27017/campus_lost_found_test
           JWT_SECRET: ci-test-secret-key
@@ -49,64 +77,43 @@ jobs:
           NODE_ENV: test
 
   # ─────────────────────────────────────────────
-  # Frontend: Install, Lint, Build
+  # Job 3: Build
   # ─────────────────────────────────────────────
-  frontend:
-    name: Frontend CI
+  build:
+    name: Build
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-
-    strategy:
-      matrix:
-        node-version: [18, 20]
+    needs: test
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 20
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install dependencies
+      - name: Install frontend dependencies
         run: npm ci
+        working-directory: frontend
 
-      - name: Lint
-        run: npm run lint
-
-      - name: Build production bundle
+      - name: Build frontend production bundle
         run: npm run build
+        working-directory: frontend
 
-      - name: Upload build artifact
-        if: matrix.node-version == 20
+      - name: Upload frontend build artifact
         uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
           path: frontend/dist
           retention-days: 7
 
-  # ─────────────────────────────────────────────
-  # Docker: Build images for backend & frontend
-  # ─────────────────────────────────────────────
-  docker:
-    name: Docker Build
-    runs-on: ubuntu-latest
-    needs: [backend, frontend]
-    if: github.event_name == 'push'
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build backend image
+      - name: Build backend Docker image
         uses: docker/build-push-action@v6
         with:
           context: ./backend
@@ -116,7 +123,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build frontend image
+      - name: Build frontend Docker image
         uses: docker/build-push-action@v6
         with:
           context: ./frontend
@@ -125,3 +132,38 @@ jobs:
           tags: campus-lost-found-frontend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # ─────────────────────────────────────────────
+  # Job 4: Deploy
+  # ─────────────────────────────────────────────
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download frontend build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+
+      - name: Deploy
+        run: |
+          echo "========================================"
+          echo "  Deployment triggered on main branch"
+          echo "  Commit: ${{ github.sha }}"
+          echo "  Author: ${{ github.actor }}"
+          echo "========================================"
+          echo ""
+          echo "Frontend build artifact downloaded to frontend/dist"
+          ls -la frontend/dist/
+          echo ""
+          echo "TODO: Add your deployment commands here, e.g.:"
+          echo "  - Push Docker images to registry (Docker Hub, GHCR, ECR)"
+          echo "  - Deploy to Render / Railway / AWS / Azure"
+          echo "  - SSH deploy to a VPS"
