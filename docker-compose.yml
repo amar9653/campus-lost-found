@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+
+  db:
+    image: mongo:7
+    container_name: campus-lf-db
+    restart: always
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - campus-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: campus-lf-backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+
+      - MONGO_URI=mongodb://db:27017/campus_lost_found
+
+      - JWT_SECRET=super_secret_change_me_in_production
+      - JWT_EXPIRES_IN=7d
+      - FRONTEND_URL=http://your-ec2-ip-or-domain
+    volumes:
+
+      - backend-uploads:/app/uploads
+    depends_on:
+      - db
+    networks:
+      - campus-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: campus-lf-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - campus-network
+
+volumes:
+  mongo-data:
+  backend-uploads:
+
+networks:
+  campus-network:
+    driver: bridge
