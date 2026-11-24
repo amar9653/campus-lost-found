@@ -17,5 +17,4 @@ USER node
 
 EXPOSE 5000
 
-# Run init script (seed admin + categories) then start the server
-CMD ["sh", "-c", "node init.js && npm start"]
+CMD ["npm", "start"]

@@ -6,6 +6,7 @@ const cors = require("cors");
 const path = require("path");
 
 const connectDB = require("./config/db");
+const seedDatabase = require("./config/seed");
 
 const reportRoutes = require("./routes/reportRoutes");
 const authRoutes = require("./routes/authRoutes");
@@ -17,15 +18,10 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect MongoDB
-if (process.env.NODE_ENV !== "test") {
-  connectDB();
-}
-
 // Middleware
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://65.0.98.102"
+    origin: process.env.FRONTEND_URL || "http://localhost"
   })
 );
 
@@ -87,11 +83,17 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
+// Start server: connect DB → seed admin & categories → listen
 if (process.env.NODE_ENV !== "test") {
-  app.listen(PORT, () => {
-    console.log(`Backend running at http://localhost:${PORT}`);
-  });
+  const start = async () => {
+    await connectDB();
+    await seedDatabase();
+    app.listen(PORT, () => {
+      console.log(`Backend running at http://localhost:${PORT}`);
+    });
+  };
+
+  start();
 }
 
 module.exports = app;

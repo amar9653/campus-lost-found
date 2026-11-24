@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import axios from "axios";
+import { api } from "../../services/portal";
 
 const AdminProtectedRoute = ({ children }) => {
   const location = useLocation();
@@ -21,14 +21,11 @@ const AdminProtectedRoute = ({ children }) => {
       }
 
       try {
-        const response = await axios.get(
-          "http://localhost:5000/api/auth/me",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await api.get("/auth/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         const user = response.data?.data;
 
