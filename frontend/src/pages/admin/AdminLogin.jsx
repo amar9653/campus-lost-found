@@ -36,7 +36,7 @@ function AdminLogin() {
 
     try {
       const response = await axios.post(
-        'http://65.0.98.102/',
+        '/auth/login',
         { email, password }
       );
 
