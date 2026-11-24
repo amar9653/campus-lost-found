@@ -6,15 +6,25 @@ import '../../styles/Dashboard.css';
 
 function SearchItems() {
   const [searchParams] = useSearchParams();
+  const keywordParam = searchParams.get('keyword') || '';
+  const categoryParam = searchParams.get('category') || 'All';
+
+  const [prevParams, setPrevParams] = useState({ keyword: keywordParam, category: categoryParam });
   const [items, setItems] = useState([]);
-  const [search, setSearch] = useState(searchParams.get('keyword') || '');
-  const [category, setCategory] = useState(searchParams.get('category') || 'All');
+  const [search, setSearch] = useState(keywordParam);
+  const [category, setCategory] = useState(categoryParam);
   const [type, setType] = useState('All');
   const [location, setLocation] = useState('All');
   const [date, setDate] = useState('');
   const [loadError, setLoadError] = useState('');
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState(null);
+
+  if (prevParams.keyword !== keywordParam || prevParams.category !== categoryParam) {
+    setPrevParams({ keyword: keywordParam, category: categoryParam });
+    setSearch(keywordParam);
+    setCategory(categoryParam);
+  }
 
   useEffect(() => {
     let active = true;
@@ -53,11 +63,6 @@ function SearchItems() {
       window.removeEventListener('focus', load);
     };
   }, []);
-
-  useEffect(() => {
-    setSearch(searchParams.get('keyword') || '');
-    setCategory(searchParams.get('category') || 'All');
-  }, [searchParams]);
 
   const categories = [...new Set(items.map(item => item.category).filter(Boolean))].sort();
   const locations = [...new Set(items.map(item => item.location).filter(Boolean))].sort();
