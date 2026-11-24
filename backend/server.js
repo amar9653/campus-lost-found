@@ -25,7 +25,7 @@ if (process.env.NODE_ENV !== "test") {
 // Middleware
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173"
+    origin: process.env.FRONTEND_URL || "http://65.0.98.102"
   })
 );
 

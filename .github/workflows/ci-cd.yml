@@ -51,7 +51,7 @@ jobs:
           MONGO_URI: mongodb://127.0.0.1:27017/campus_lost_found_test
           JWT_SECRET: ci_test_jwt_secret_key
           JWT_EXPIRES_IN: 7d
-          FRONTEND_URL: http://localhost:5173
+          FRONTEND_URL: http://65.0.98.102
 
   
   frontend-build:
