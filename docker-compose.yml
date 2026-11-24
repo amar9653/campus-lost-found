@@ -10,6 +10,12 @@ services:
       - mongo-data:/data/db
     networks:
       - campus-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   backend:
     build:
@@ -22,17 +28,18 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=5000
-
       - MONGO_URI=mongodb://db:27017/campus_lost_found
-
-      - JWT_SECRET=super_secret_change_me_in_production
-      - JWT_EXPIRES_IN=7d
-      - FRONTEND_URL=http://65.0.98.102
+      - JWT_SECRET=${JWT_SECRET:-super_secret_change_me_in_production}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@campus.edu}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - ADMIN_NAME=${ADMIN_NAME:-Campus Admin}
     volumes:
-
       - backend-uploads:/app/uploads
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - campus-network
 
