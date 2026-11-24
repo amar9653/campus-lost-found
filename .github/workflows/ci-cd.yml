@@ -10,7 +10,7 @@ env:
   NODE_VERSION: "20"
 
 jobs:
-  # ─────────────────────────── Backend ───────────────────────────
+  
   backend-lint-and-test:
     name: Backend – Install, Lint & Test
     runs-on: ubuntu-latest
@@ -52,7 +52,7 @@ jobs:
           JWT_EXPIRES_IN: 7d
           FRONTEND_URL: http://localhost:5173
 
-  # ─────────────────────────── Frontend ──────────────────────────
+  
   frontend-build:
     name: Frontend – Install, Lint & Build
     runs-on: ubuntu-latest
@@ -82,7 +82,7 @@ jobs:
         env:
           VITE_API_URL: /api
 
-  # ─────────────────────── Docker Build Check ────────────────────
+  
   docker-build:
     name: Docker – Build Images
     runs-on: ubuntu-latest
